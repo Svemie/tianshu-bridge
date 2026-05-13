@@ -1230,7 +1230,8 @@ async function loadONNXModel(){
     // 配置WASM路径（CDN加载onnxruntime-web必须显式指定WASM文件位置）
     try{ if(ort&&ort.env&&ort.env.wasm) ort.env.wasm.wasmPaths='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.0/dist/'; }catch(e){}
 
-    onnxSession = await ort.createInferenceSession(MODEL_PATH, {
+    // onnxruntime-web 1.x API: 使用 InferenceSession.create()
+    onnxSession = await ort.InferenceSession.create(MODEL_PATH, {
       executionProviders: ['wasm','webgpu'],
       graphOptimizationLevel: 'all'
     });
