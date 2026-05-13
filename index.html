@@ -1226,6 +1226,10 @@ async function loadONNXModel(){
     console.log('🧠 正在加载 YOLOv8n ONNX 模型...');
     const statusEl = document.getElementById('modelStatus');
     if(statusEl){statusEl.textContent='⏳ 模型加载中...';statusEl.style.color='#f59e0b';}
+
+    // 配置WASM路径（CDN加载onnxruntime-web必须显式指定WASM文件位置）
+    try{ if(ort&&ort.env&&ort.env.wasm) ort.env.wasm.wasmPaths='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.0/dist/'; }catch(e){}
+
     onnxSession = await ort.createInferenceSession(MODEL_PATH, {
       executionProviders: ['wasm','webgpu'],
       graphOptimizationLevel: 'all'
@@ -1236,9 +1240,9 @@ async function loadONNXModel(){
     return onnxSession;
   }catch(err){
     modelLoading = false;
-    console.warn('⚠️ ONNX模型加载失败，回退到增强模拟模式:', err.message);
+    console.error('❌ ONNX模型加载失败:', err.message, err);
     const statusEl = document.getElementById('modelStatus');
-    if(statusEl){statusEl.textContent='⚠️ 模拟模式（需部署best.onnx）';statusEl.style.color='#f59e0b';}
+    if(statusEl){statusEl.textContent='⚠️ 模型加载失败: '+String(err.message).substring(0,40);statusEl.style.color='#ef4444';}
     return null;
   }
 }
