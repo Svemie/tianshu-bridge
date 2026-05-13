@@ -1237,25 +1237,135 @@ function processFiles(files){
   });
 }
 
-// 模拟YOLOv8检测（基于图像特征随机生成合理结果）
-function simulateDetect(imgObj){
+// ===== 图像区域特征分析 =====
+function analyzeImageRegions(dataUrl, w, h){
+  return new Promise(resolve => {
+    const cvs=document.createElement('canvas'); cvs.width=40; cvs.height=30;
+    const ctx=cvs.getContext('2d');
+    const img=new Image(); img.onload=()=>{
+      ctx.drawImage(img,0,0,40,30);
+      const d=ctx.getImageData(0,0,40,30).data;
+      // 计算每个区域的平均亮度
+      const regions={topLeft:[],topRight:[],botLeft:[],botRight:[],center:[],bottom:[]};
+      for(let y=0;y<30;y++){
+        for(let x=0;x<40;x++){
+          const idx=(y*40+x)*4;
+          const brightness=(d[idx]+d[idx+1]+d[idx+2])/3;
+          if(y<10&&x<20) regions.topLeft.push(brightness);
+          else if(y<10&&x>=20) regions.topRight.push(brightness);
+          else if(y>=20&&x<20) regions.botLeft.push(brightness);
+          else if(y>=20&&x>=20) regions.botRight.push(brightness);
+          if(y>=15&&x>=10&&x<30) regions.bottom.push(brightness);
+          if(y>=8&&y<22&&x>=8&&x<32) regions.center.push(brightness);
+        }
+      }
+      // 找最暗的区域（可能是裂缝/水渍）
+      const avg=r=>r.reduce((a,b)=>a+b,0)/r.length;
+      const result={
+        topLeft:avg(regions.topLeft), topRight:avg(regions.topRight),
+        botLeft:avg(regions.botLeft), botRight:avg(regions.botRight),
+        center:avg(regions.center), bottom:avg(regions.bottom),
+        overall:avg(regions.center),
+        hasDarkLine: false, hasWetArea: false,
+        darkestZone: 'center'
+      };
+      // 判断是否有明显的暗线（裂缝特征）—— 扫描对角线方向
+      let darkCount=0;
+      for(let i=0;i<35;i++){
+        const x=Math.floor(i/35*40), y=Math.floor(i/35*30);
+        const idx=(y*40+x)*4; const b=(d[idx]+d[idx+1]+d[idx+2])/3;
+        if(b<100) darkCount++;
+      }
+      result.hasDarkLine = darkCount > 8;
+      // 底部偏暗 → 可能有水渍
+      result.hasWetArea = result.bottom < result.overall - 15;
+
+      // 最暗区域
+      const zones=[{n:'topLeft',v:result.topLeft},{n:'topRight',v:result.topRight},
+        {n:'botLeft',v:result.botLeft},{n:'botRight',v:result.botRight},{n:'center',v:result.center}];
+      zones.sort((a,b)=>a.v-b.v);
+      result.darkestZone = zones[0].n;
+      resolve(result);
+    };
+    img.src=dataUrl;
+  });
+}
+
+// 缺陷类型的位置/形状偏好配置
+const DEFECT_PREFERENCES = {
+  crack:    { shape:'elongated', wRange:[4,18], hRange:[15,45], zones:['center','darkest'], needDark:true },
+  expose:   { shape:'small',     wRange:[5,14], hRange:[6,16],  zones:['botRight','botLeft','darkest'], needDark:false, edgeBias:0.6 },
+  spall:    { shape:'irregular', wRange:[12,30],hRange:[10,28], zones:['center','topLeft','topRight'] },
+  bolt:     { shape:'square',    wRange:[4,10], hRange:[4,10],  zones:['topRight','topLeft'], needDark:false },
+  coating:  { shape:'medium',    wRange:[10,25],hRange:[8,22],  zones:['topLeft','topRight','center'] },
+  water:    { shape:'wide',      wRange:[15,35],hRange:[8,18],  zones:['bottom','botLeft','botRight'], needDark:true },
+};
+
+// 模拟YOLOv8检测（基于图像特征智能生成合理结果）
+async function simulateDetect(imgObj){
+  const analysis = await analyzeImageRegions(imgObj.dataUrl, imgObj.width, imgObj.height);
   const defects=[];
-  const count = Math.floor(Math.random()*3)+1; // 1-3 defects per image
+  const count = Math.floor(Math.random()*3)+1; // 1-3 defects
+
+  // 根据图像特征选择合理的缺陷类型组合
+  let availableTypes = [...DEFECT_TYPES];
+  // 如果没有暗线，降低裂缝概率
+  if(!analysis.hasDarkLine){
+    availableTypes = availableTypes.map(t => t.id==='crack'?{...t,_weight:0.3}:{...t,_weight:1});
+  }
+  // 如果底部不暗，降低水渍概率
+  if(!analysis.hasWetArea){
+    availableTypes = availableTypes.map(t => t.id==='water'?{...(t||availableTypes.find(x=>x.id==='water')),_weight:0.2}:t);
+  }
+
   for(let i=0;i<count;i++){
-    const dt=DEFECT_TYPES[Math.floor(Math.random()*DEFECT_TYPES.length)];
-    const conf=(78+Math.random()*20).toFixed(1); // 78-98%
-    const wPct=(8+Math.random()*25), hPct=(10+Math.random()*30);
-    const xPct=(5+Math.random()*(70-wPct)), yPct=(10+Math.random()*(60-hPct));
-    defects.push({...dt,id:imgObj.id+'_'+i,imgId:imgObj.id,imgName:imgObj.name,
+    // 加权随机选择类型
+    const weighted = availableTypes.filter(t=>t._weight!==0);
+    const totalW = weighted.reduce((s,t)=>s+(t._weight||1),0);
+    let rnd = Math.random()*totalW, sel=null;
+    for(const t of weighted){ rnd-=(t._weight||1); if(rnd<=0){sel=t;break;} }
+    if(!sel) sel = DEFECT_TYPES[i%DEFECT_TYPES.length];
+
+    const pref = DEFECT_PREFERENCES[sel.id] || DEFECT_Preferences.crack;
+    // 根据偏好选择区域
+    let zone = pref.zones[Math.floor(Math.random()*pref.zones.length)];
+    if(zone==='darkest') zone=analysis.darkestZone;
+
+    // 区域→坐标映射
+    const zoneCoords = {
+      topLeft:{xc:25,yc:25}, topRight:{xc:60,yc:25},
+      botLeft:{xc:25,yc:60}, botRight:{xc:60,yc:60},
+      center:{xc:45,yc:45}, bottom:{xc:45,yc:70}
+    };
+    const zc = zoneCoords[zone] || zoneCoords.center;
+
+    // 偏好范围内随机大小
+    const wPct=pref.wRange[0]+Math.random()*(pref.wRange[1]-pref.wRange[0]);
+    const hPct=pref.hRange[0]+Math.random()*(pref.hRange[1]-pref.hRange[0]);
+
+    // 围绕区域中心偏移
+    const xPct=Math.max(3,Math.min(75-wPct, zc.xc + (Math.random()-0.5)*20));
+    const yPct=Math.max(5,Math.min(75-hPct, zc.yc + (Math.random()-0.5)*18));
+
+    const conf=(80+Math.random()*18).toFixed(1); // 80-98%
+    const metrics = sel.id==='crack'
+      ? {len:(0.3+Math.random()*1.8).toFixed(2)+'m',wid:(1+Math.random()*3).toFixed(1)+'mm'}
+      : sel.id==='expose' ? {area:(0.02+Math.random()*0.15).toFixed(3)+'m²',rebarD:(12+Math.random()*10).toFixed(0)+'mm'}
+      : {area:(0.05+Math.random()*0.35).toFixed(2)+'m²'};
+
+    defects.push({...sel, id:imgObj.id+'_'+i, imgId:imgObj.id, imgName:imgObj.name,
       conf:parseFloat(conf),
       box:{x:xPct,y:yPct,w:wPct,h:hPct},
       time:new Date().toLocaleTimeString(),
-      metrics:i===0?{len:(0.5+Math.random()*2).toFixed(2)+'m',wid:(2+Math.random()*4).toFixed(1)+'mm'}:{area:(0.05+Math.random()*0.4).toFixed(2)+'m²'}
+      metrics
     });
+
+    // 避免重复选同类型
+    availableTypes = availableTypes.filter(t => t.id !== sel.id);
   }
-  // sort by confidence desc
+
   defects.sort((a,b)=>b.conf-a.conf);
-  imgObj.defects=defects;imgObj.detected=true;
+  imgObj.defects=defects; imgObj.detected=true;
   allDefects=allDefects.concat(defects);
   renderAll();
 }
@@ -1421,19 +1531,19 @@ function showAlertPopup(defect){
 }
 
 // 自动检测所有上传的图片
-function autoDetectAll(){
+async function autoDetectAll(){
   const prog=document.getElementById('detectProgress'),fill=document.getElementById('dpFill'),txt=document.getElementById('dpText');
   prog.classList.add('show');
   let idx=0,total=uploadedImages.filter(im=>!im.detected).length;
   if(total===0){prog.classList.remove('show');return;}
 
-  function detectNext(){
+  async function detectNext(){
     if(idx>=total){prog.classList.remove('show');fill.style.width='100%';txt.textContent='✅ 检测完成，共检出 '+allDefects.length+' 处缺陷';setTimeout(()=>prog.classList.remove('show'),2000);return;}
     const im=uploadedImages.filter(x=>!x.detected)[idx];
     txt.textContent=`正在分析 (${idx+1}/${total})：${im.name}`;
     fill.style.width=((idx)/total*100)+'%';
-    
-    simulateDetect(im);
+
+    await simulateDetect(im);
     idx++;
     setTimeout(detectNext,400+Math.random()*600); // 模拟推理延迟
   }
