@@ -983,12 +983,12 @@ body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
       .ri-bar-fill{height:100%;border-radius:2px}
 
       /* 详情视图 */
-      .detail-view{width:400px;background:#111827;border-left:1px solid rgba(148,163,184,.12);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
-      .dv-canvas-area{width:100%;flex:1;position:relative;overflow:auto;background:#0d1525;display:flex;align-items:center;justify-content:center;padding:10px}
-      .dv-img{max-width:100%;max-height:100%;border-radius:6px}
+      .detail-view{width:400px;min-width:320px;background:#111827;border-left:1px solid rgba(148,163,184,.12);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+      .dv-canvas-area{width:100%;min-height:280px;max-height:50vh;position:relative;overflow:auto;background:#0d1525;display:flex;align-items:center;justify-content:center;padding:10px}
+      .dv-img{max-width:100%;max-height:100%;border-radius:6px;display:block}
       .dv-overlay{position:absolute;top:10px;left:10px;right:10px;bottom:10px;pointer-events:none}
-      .dv-body{padding:14px 16px;border-top:1px solid rgba(148,163,184,.12);flex-shrink:0}
-      .dv-title{font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+      .dv-body{padding:14px 16px;border-top:1px solid rgba(148,163,184,.12);flex-shrink:0;overflow-y:auto;min-height:0}
+      .dv-title{font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.4}
       .dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
       .dv-field{font-size:11px;color:#94a3b8}
       .dv-field b{color:#f1f5f9;font-size:13px}
@@ -1299,10 +1299,12 @@ function postprocess(outputTensor, prepInfo){
   const boxes=[];
   for(let i=0;i<numDets;i++){
     const baseIdx=i*numClasses;
-    const cx=output[baseIdx]*prepInfo.scale+prepInfo.padX;
-    const cy=output[baseIdx+1]*prepInfo.scale+prepInfo.padY;
-    const w=output[baseIdx+2]*prepInfo.scale;
-    const h=output[baseIdx+3]*prepInfo.scale;
+    // YOLOv8输出在640×640空间，需要转回原图坐标系
+    // 正确变换：先减去letterbox padding，再除以缩放比
+    const cx=(output[baseIdx]-prepInfo.padX)/prepInfo.scale;
+    const cy=(output[baseIdx+1]-prepInfo.padY)/prepInfo.scale;
+    const w=output[baseIdx+2]/prepInfo.scale;
+    const h=output[baseIdx+3]/prepInfo.scale;
 
     // 找最高置信度类别
     let maxClassScore=0, classId=-1;
@@ -1659,11 +1661,11 @@ function showDetail(defectId){
 
   const sevStyle=d.sev>=3?'#fee2e2;color:#dc2626':d.sev>=2?'#fef3c7;color:#d97706':'#dbeafe;color:#2563eb';
   document.getElementById('dvBody').innerHTML=`
-    <div class="dv-title"><span style="width:10px;height:10px;border-radius:50%;background:${d.color}"></span>${d.name}
-      <span class="ri-sev" style="background:${sevStyle.split(';')[0]};color:${sevStyle.split(';')[1]};font-size:11px">${d.sevText}</span></div>
-    <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">📷 ${d.imgName}</div>
-    <div class="dv-grid">${Object.entries(d.metrics||{}).map(([k,v])=>`<div class="dv-field">${k==='len'?'长度':k==='wid'?'宽度':k==='area'?'面积':''}<b>${v}</b></div>`).join('')}</div>
-    <div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:11px"><span>YOLOv8m 置信度</span><b style="color:${d.color}">${d.conf}%</b></div>
+    <div class="dv-title"><span style="width:10px;height:10px;border-radius:50%;background:${d.color};flex-shrink:0"></span><span style="flex-shrink:0">${d.name}</span>
+      <span class="ri-sev" style="background:${sevStyle.split(';')[0]};color:${sevStyle.split(';')[1]};font-size:11px;flex-shrink:0;margin-left:auto">${d.sevText}${d.isReal?' ⚡':''}</span></div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">📷 ${d.imgName} ${d.isReal?'· YOLOv8n 真实AI':''}</div>
+    <div class="dv-grid">${Object.entries(d.metrics||{}).map(([k,v])=>`<div class="dv-field">${k==='len'?'长度':k==='wid'?'宽度':k==='area'?'面积':k==='status'?'状态':k}<b>${v}</b></div>`).join('')}</div>
+    <div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:11px"><span>${d.isReal?'YOLOv8n 置信度':'AI 置信度'}</span><b style="color:${d.color}">${d.conf}%</b></div>
       <div class="ri-bar" style="height:6px"><div class="ri-bar-fill" style="width:${d.conf}%;background:linear-gradient(90deg,${d.color},${d.color}aa)"></div></div></div>
     <div class="dv-solution">📋 <b>处置方案 P${d.sev===3?0:d.sev===2?1:2}</b><br>${d.sol}</div>`;
 }
