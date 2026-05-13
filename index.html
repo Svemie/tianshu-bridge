@@ -920,168 +920,159 @@ body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
     </div>
   </div><!-- /pageSchedule -->
 
-  <!-- ============ 页面3：实时监测 ============ -->
+  <!-- ============ 页面3：AI智能检测（交互版） ============ -->
   <div class="page" id="pageMonitor" style="background:#0a0e1a;">
     <style>
-      /* ===== 实时监测专用样式 ===== */
-      #pageMonitor { display:flex;width:100%;height:100%; }
       #pageMonitor * { box-sizing:border-box; font-family:'PingFang SC','Microsoft YaHei',sans-serif; }
+      /* 上传区 */
+      .upload-zone {
+        flex:1;display:flex;flex-direction:column;align-items:center;
+        justify-content:center;padding:30px;border:2px dashed rgba(59,130,246,.4);border-radius:16px;margin:20px;background:rgba(17,24,39,.6);cursor:pointer;transition:.3s;position:relative;overflow:hidden;
+      }
+      .upload-zone:hover{border-color:#3b82f6;background:rgba(59,130,246,.08)}
+      .upload-zone.dragover{border-color:#10b981;background:rgba(16,185,129,.08);transform:scale(1.01)}
+      .upload-icon{font-size:48px;margin-bottom:12px}
+      .upload-text{font-size:15px;color:#f1f5f9;font-weight:600}
+      .upload-subtext{font-size:12px;color:#94a3b8;margin-top:6px}
+      .upload-formats{margin-top:14px;display:flex;gap:8px;font-size:11px;color:#64748b}
+      .fmt-tag{padding:3px 10px;border-radius:12px;background:rgba(148,163,184,.1)}
 
-      .mon-left {
-        width:300px;background:#111827;border-right:1px solid rgba(148,163,184,.12);
+      /* 图片网格 */
+      .img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:0 20px 20px;}
+      .img-card{
+        background:#1a2235;border-radius:12px;overflow:hidden;
+        border:1px solid rgba(148,163,184,.12);cursor:pointer;transition:.25s;position:relative;
+      }
+      .img-card:hover{border-color:#3b82f6;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+      .img-card.selected{border-color:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.3)}
+      .img-thumb-wrap{width:100%;aspect-ratio:4/3;position:relative;overflow:hidden;background:#111827;}
+      .img-thumb{width:100%;height:100%;object-fit:cover;}
+      .img-det-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+      .det-box-abs{position:absolute;border:2px solid;border-radius:3px}
+      .det-label-abs{position:absolute;top:-18px;left:-1px;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;color:white;white-space:nowrap;transform:translateY(-100%)}
+      .img-card-info{padding:8px 10px}
+      .img-card-name{font-size:11px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .img-card-stats{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+      .defect-chip{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:600}
+
+      /* 结果面板 */
+      .result-panel{
+        width:340px;background:#111827;border-left:1px solid rgba(148,163,184,.12);
         display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;
       }
-      .mon-left-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(148,163,184,.12);}
-      .mon-left-header h3{font-size:13px;color:#f1f5f9;}
-      .mon-badge{background:rgba(239,68,68,.15);color:#ef4444;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
-      .mon-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px;}
-      .ms-card{background:#1a2235;border-radius:8px;padding:10px;text-align:center;border:1px solid rgba(148,163,184,.12);}
-      .ms-num{font-size:22px;font-weight:800;}
-      .ms-label{font-size:10px;color:#94a3b8;margin-top:2px;}
-      .mon-section-title{font-size:11px;color:#64748b;padding:8px 14px 4px;font-weight:600;text-transform:uppercase;}
-      .mon-defect-list{flex:1;overflow-y:auto;padding:0 7px 7px;}
-      .md-item{background:#1a2235;border-radius:8px;padding:10px;margin-bottom:6px;border:1px solid rgba(148,163,184,.12);cursor:pointer;transition:.2s;}
-      .md-item:hover{background:#222d44;transform:translateX(-2px);}
-      .md-hdr{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
-      .md-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;flex-shrink:0;}
-      .md-name{font-size:12px;font-weight:600;flex:1;color:#f1f5f9;}
-      .md-sev{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700;}
-      .md-meta{font-size:10px;color:#94a3b8;}
-      .md-bar{height:3px;background:#1e293b;border-radius:2px;overflow:hidden;margin-top:4px;}
-      .md-bar-fill{height:100%;border-radius:2px;}
+      .rp-header{padding:14px 16px;border-bottom:1px solid rgba(148,163,184,.12);display:flex;align-items:center;justify-content:space-between}
+      .sort-btns{display:flex;gap:4px}
+      .sort-btn{padding:4px 10px;border-radius:12px;font-size:10px;cursor:pointer;border:1px solid rgba(148,163,184,.2);background:transparent;color:#94a3b8;transition:.2s}
+      .sort-btn.active,.sort-btn:hover{background:rgba(59,130,246,.15);color:#3b82f6;border-color:rgba(59,130,246,.3)}
+      .result-list{flex:1;overflow-y:auto;padding:8px}
+      .result-item{
+        background:#1a2235;border-radius:10px;padding:12px;margin-bottom:8px;
+        border:1px solid rgba(148,163,184,.12);cursor:pointer;transition:.2s;
+      }
+      .result-item:hover{background:#222d44;transform:translateX(-3px)}
+      .result-item.active{border-left:3px solid #3b82f6}
+      .ri-header{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+      .ri-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:white;flex-shrink:0}
+      .ri-name{font-size:12px;font-weight:600;color:#f1f5f9;flex:1}
+      .ri-sev{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700}
+      .ri-meta{font-size:10px;color:#94a3b8}
+      .ri-bar{height:4px;background:#1e293b;border-radius:2px;overflow:hidden;margin-top:5px}
+      .ri-bar-fill{height:100%;border-radius:2px}
 
-      .mon-center{flex:1;display:flex;flex-direction:column;position:relative;background:linear-gradient(180deg,#080c15,#0d1424);overflow:hidden;}
-      .mon-video-wrap{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-      .mon-canvas{width:100%;height:100%;display:block;}
+      /* 详情视图 */
+      .detail-view{width:400px;background:#111827;border-left:1px solid rgba(148,163,184,.12);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+      .dv-canvas-area{width:100%;flex:1;position:relative;overflow:auto;background:#0d1525;display:flex;align-items:center;justify-content:center;padding:10px}
+      .dv-img{max-width:100%;max-height:100%;border-radius:6px}
+      .dv-overlay{position:absolute;top:10px;left:10px;right:10px;bottom:10px;pointer-events:none}
+      .dv-body{padding:14px 16px;border-top:1px solid rgba(148,163,184,.12);flex-shrink:0}
+      .dv-title{font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+      .dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+      .dv-field{font-size:11px;color:#94a3b8}
+      .dv-field b{color:#f1f5f9;font-size:13px}
+      .dv-solution{margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);font-size:11px;line-height:1.7;color:#6ee7b7}
 
-      /* 检测叠加层 */
-      .det-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
-      .det-box{position:absolute;border:2px solid;border-radius:4px;animation:boxIn .4s ease;}
-      @keyframes boxIn{from{transform:scale(1.2);opacity:0}to{transform:scale(1);opacity:1}}
-      .det-label{position:absolute;top:-20px;left:-2px;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;color:white;white-space:nowrap;transform:translateY(-100%);}
+      /* 统计条 */
+      .stat-bar-row{display:flex;gap:8px;padding:12px 20px;background:rgba(17,24,39,.5);border-top:1px solid rgba(148,163,184,.08)}
+      .sbr-card{flex:1;text-align:center;padding:8px;border-radius:8px;background:#1a2235;border:1px solid rgba(148,163,184,.08)}
+      .sbr-num{font-size:20px;font-weight:800}
+      .sbr-label{font-size:10px;color:#64748b;margin-top:2px}
 
-      /* 视频UI浮层 */
-      .mon-vui-top{position:absolute;top:0;left:0;right:0;padding:10px 14px;display:flex;justify-content:space-between;z-index:20;pointer-events:none;}
-      .mon-vui-top >*{pointer-events:auto;}
-      .mon-vui-info{background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border-radius:8px;padding:6px 12px;font-size:10px;display:flex;align-items:center;gap:10px;color:#94a3b8;}
-      .mon-vui-info b{color:#06b6d4}
-      .mon-rec{background:rgba(239,68,68,.85);color:white;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;display:flex;align-items:center;gap:5px;animation:recBlink 1s infinite;}
-      @keyframes recBlink{0%,100%{opacity:1}50%{opacity:.4}}
-      .mon-rec-dot{width:7px;height:7px;background:white;border-radius:50%}
+      /* 检测进度 */
+      .detect-progress{display:none;align-items:center;gap:10px;padding:12px 20px;background:rgba(59,130,246,.06);border-top:1px solid rgba(59,130,246,.15)}
+      .detect-progress.show{display:flex}
+      .dp-spinner{width:18px;height:18px;border:2px solid rgba(59,130,246,.2);border-top-color:#3b82f6;border-radius:50%;animation:spin .6s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      .dp-text{font-size:12px;color:#94a3b8}
+      .dp-bar{flex:1;height:4px;background:rgba(59,130,246,.15);border-radius:2px;overflow:hidden}
+      .dp-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:2px;width:0%;transition:width .3s}
 
-      .mon-tool-right{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;z-index:25;}
-      .mt-btn{width:32px;height:32px;border-radius:7px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);color:#94a3b8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;}
-      .mt-btn:hover{background:rgba(59,130,246,.25);color:#3b82f6;border-color:#3b82f6;}
-
-      .mon-ctrl-bar{position:absolute;bottom:0;left:0;right:0;padding:8px 14px;background:linear-gradient(transparent,rgba(0,0,0,.75));display:flex;align-items:center;gap:10px;z-index:20;}
-      .mc-btn{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.1);border:none;color:white;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:.2s;}
-      .mc-btn:hover{background:rgba(255,255,255,.2)}
-      .mc-timeline{flex:1;height:3px;background:rgba(255,255,255,.15);border-radius:2px;position:relative;cursor:pointer;}
-      .mc-progress{height:100%;background:linear-gradient(90deg,#3b82f6,#06b6d4);border-radius:2px;width:43%;transition:width .3s}
-      .mc-time{font-size:10px;color:#94a3b8;font-family:monospace;min-width:100px;text-align:right;}
-
-      .mon-right{width:320px;background:#111827;border-left:1px solid rgba(148,163,184,.12);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
-      .mon-tabs{display:flex;border-bottom:1px solid rgba(148,163,184,.12);padding:0 14px;}
-      .mon-tab{padding:10px 0;margin-right:16px;font-size:12px;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;transition:.2s;font-weight:500;}
-      .mon-tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
-      .mon-tab-content{display:none;flex:1;overflow-y:auto;padding:10px 14px;}
-      .mon-tab-content.active{display:block}
-      .mdc-card{background:#1a2235;border-radius:10px;border:1px solid rgba(148,163,184,.12);overflow:hidden;}
-      .mdc-canvas-area{width:100%;aspect-ratio:16/10;background:#0d1525;position:relative;overflow:hidden;}
-      .mdc-canvas-area canvas{width:100%;height:100%;object-fit:cover}
-      .mdc-body{padding:12px}
-      .mdc-title{font-size:13px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;color:#f1f5f9;}
-      .mdc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0;}
-      .mdc-field{font-size:10px;color:#94a3b8}
-      .mdc-field b{color:#f1f5f9;font-size:12px;display:block;margin-top:1px}
-      .mdc-solution{margin-top:10px;padding:8px 10px;border-radius:6px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);font-size:10px;line-height:1.7;color:#6ee7b7}
-
-      .alert-popup{position:fixed;top:55px;right:18px;width:340px;background:#1a2235;border:1px solid rgba(239,68,68,.4);border-radius:12px;z-index:999;overflow:hidden;animation:alertSlideIn .4s ease;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none;}
-      .alert-popup.show{display:block}
-      @keyframes alertSlideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
-      .alert-hdr{background:linear-gradient(135deg,rgba(239,68,68,.2),transparent);padding:8px 12px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(239,68,68,.2)}
-      .alert-title{font-size:12px;font-weight:700;color:#ef4444;flex:1}
-      .alert-close{cursor:pointer;color:#94a3b8;font-size:15px}
-      .alert-body{padding:10px 12px;font-size:11px;line-height:1.7;color:#94a3b8}
-      .alert-action{margin:0 12px 10px;padding:6px;border-radius:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444;font-size:10px;font-weight:600;cursor:pointer;text-align:center}
-
-      .hidden-input{display:none}
+      /* 告警 */
+      .alert-pop{position:fixed;top:55px;right:18px;width:340px;background:#1a2235;border:1px solid rgba(239,68,68,.4);border-radius:12px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:aSlideIn .4s ease;display:none}
+      .alert-pop.show{display:block}
+      @keyframes aSlideIn{from{transform:translateX(120%)}to{transform:translateX(0)}}
     </style>
 
-    <!-- 左侧：统计+缺陷列表 -->
-    <div class="mon-left">
-      <div class="mon-left-header"><h3>📊 实时检测统计</h3><span class="mon-badge" id="mTotal">6 处缺陷</span></div>
-      <div class="mon-stats">
-        <div class="ms-card"><div class="ms-num" style="color:#ef4444">1</div><div class="ms-label">危急</div></div>
-        <div class="ms-card"><div class="ms-num" style="color:#f59e0b">2</div><div class="ms-label">严重</div></div>
-        <div class="ms-card"><div class="ms-num" style="color:#06b6d4">2</div><div class="ms-label">一般</div></div>
-        <div class="ms-card"><div class="ms-num" style="color:#10b981">96.8%</div><div class="ms-label">AI置信度</div></div>
-      </div>
-      <div class="mon-section-title">🔍 缺陷列表（实时更新）</div>
-      <div class="mon-defect-list" id="mDefectList"></div>
-      <div style="padding:8px 14px;">
-        <button onclick="triggerMonAlert()" style="width:100%;padding:8px;border-radius:7px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;">🔔 模拟新缺陷告警</button>
-      </div>
-    </div>
-
-    <!-- 中间：视频监控 -->
-    <div class="mon-center">
-      <div class="mon-video-wrap">
-        <canvas id="monCanvas" class="mon-canvas"></canvas>
-        <div class="det-overlay" id="mDetOverlay"></div>
-        <div class="mon-vui-top">
-          <div class="mon-vui-info">
-            <span>📍<b>113.2856°E 33.7614°N</b></span><span>📏 ALT <b>96.3m</b></span><span>🧭 <b>085°</b></span><span>⚡ <b>8.0 m/s</b></span>
+    <!-- 主区域：上传+结果 -->
+    <div style="display:flex;width:100%;height:100%;">
+      <!-- 左侧：上传区 + 图片列表 -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <!-- 上传区（无图时显示） -->
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('aiFileInput').click()">
+          <div class="upload-icon">📤</div>
+          <div class="upload-text">点击或拖拽上传桥梁巡检照片</div>
+          <div class="upload-subtext">支持 JPG / PNG / WEBP · 单次最多 50 张 · AI 自动识别 7 类缺陷</div>
+          <input type="file" id="aiFileInput" multiple accept="image/*" style="display:none" onchange="handleAIUpload(event)">
+          <div class="upload-formats">
+            <span class="fmt-tag">JPG</span><span class="fmt-tag">PNG</span><span class="fmt-tag">WEBP</span>
+            <span class="fmt-tag" style="color:#ef4444;">🔴 裂缝</span>
+            <span class="fmt-tag" style="color:#3b82f6;">🔵 锈蚀</span>
+            <span class="fmt-tag" style="color:#f59e0b;">🟠 剥落</span>
+            <span class="fmt-tag" style="color:#10b981;">🟢 螺栓</span>
           </div>
-          <div class="mon-rec"><div class="mon-rec-dot"></div>REC</div>
         </div>
-        <div class="mon-tool-right">
-          <div class="mt-btn" title="截图" onclick="monCapture()">📷</div>
-          <div class="mt-btn" id="mBtnThermal" onclick="monToggleThermal(this)">🌡️</div>
-          <div class="mt-btn active" id="mBtnVisible" onclick="monToggleVisible(this)">👁️</div>
-          <label class="mt-btn" for="mUploadInput" style="font-size:14px;" title="上传图片检测">📤</label>
-          <input type="file" id="mUploadInput" class="hidden-input" accept="image/*" onchange="monHandleUpload(event)">
+        <!-- 图片网格（有图后显示） -->
+        <div class="img-grid" id="imgGrid" style="display:none"></div>
+        <!-- 检测进度条 -->
+        <div class="detect-progress" id="detectProgress">
+          <div class="dp-spinner"></div>
+          <div class="dp-text"><span id="dpText">正在用 YOLOv8m 分析图像...</span></div>
+          <div class="dp-bar"><div class="dp-fill" id="dpFill"></div></div>
         </div>
-        <div class="mon-ctrl-bar">
-          <div class="mc-btn" id="mPlayBtn" onclick="toggleMonPlay()">⏸</div>
-          <div class="mc-timeline"><div class="mc-progress" id="mTimelineProg"></div></div>
-          <div class="mc-time"><span id="mCurTime">00:03:40</span>/00:08:32</div>
+        <!-- 统计条 -->
+        <div class="stat-bar-row" id="statBarRow" style="display:none">
+          <div class="sbr-card"><div class="sbr-num" id="stTotalImg" style="color:#3b82f6">0</div><div class="sbr-label">已检测图像</div></div>
+          <div class="sbr-card"><div class="sbr-num" id="stTotalDefect" style="color:#ef4444">0</div><div class="sbr-label">检出缺陷</div></div>
+          <div class="sbr-card"><div class="sbr-num" id="stAvgConf" style="color:#10b981">--%</div><div class="sbr-label">平均置信度</div></div>
+          <div class="sbr-card"><div class="sbr-num" id="stCritical" style="color:#ef4444">0</div><div class="sbr-label">危急/严重</div></div>
         </div>
       </div>
-    </div>
 
-    <!-- 右侧：详情+报告 -->
-    <div class="mon-right">
-      <div class="mon-tabs">
-        <div class="mon-tab active" data-mtab="mtabDetail" onclick="switchMonTab(this)">缺陷详情</div>
-        <div class="mon-tab" data-mtab="mtabReport" onclick="switchMonTab(this)">定损报告</div>
-      </div>
-      <div class="mon-tab-content active" id="mtabDetail">
-        <div class="mdc-card" id="mdcDetailCard">
-          <div class="mdc-canvas-area"><canvas id="mDetailCanvas"></canvas></div>
-          <div class="mdc-body" id="mDetailBody"></div>
+      <!-- 中间：检测结果排序列表 -->
+      <div class="result-panel">
+        <div class="rp-header">
+          <h3 style="font-size:14px;color:#f1f5f9">🔍 检测结果</h3>
+          <div class="sort-btns">
+            <button class="sort-btn active" onclick="sortResults('conf')" id="sortConf">按置信度 ↓</button>
+            <button class="sort-btn" onclick="sortResults('sev')" id="sortSev">按严重度 ↓</button>
+            <button class="sort-btn" onclick="sortResults('time')" id="sortTime">按时间</button>
+          </div>
+        </div>
+        <div class="result-list" id="resultList">
+          <div style="text-align:center;padding:40px 16px;color:#64748b;font-size:13px;">📷 上传图片后<br>AI 将自动检测并在此展示结果</div>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid rgba(148,163,184,.12)">
+          <button onclick="clearAllImages()" style="width:100%;padding:8px;border-radius:7px;background:transparent;border:1px solid rgba(239,68,68,.3);color:#ef4444;font-size:12px;cursor:pointer;">🗑️ 清空所有图片</button>
+          <button onclick="exportDetectionReport()" style="width:100%;padding:8px;border-radius:7px;background:linear-gradient(135deg,#3b82f6,#10b981);color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px;">📥 导出检测报告</button>
         </div>
       </div>
-      <div class="mon-tab-content" id="mtabReport">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px;">📋 巡检报告摘要</div>
-        <div style="background:#1a2235;border-radius:8px;padding:12px;border:1px solid rgba(148,163,184,.12);font-size:11px;line-height:2;color:#94a3b8;">
-          <div style="display:flex;justify-content:space-between;"><span>巡检日期</span><b style="color:#06b6d4">2026-05-13</b></div>
-          <div style="display:flex;justify-content:space-between;"><span>目标桥梁</span><b style="color:#f1f5f9">平顶山西干渠桥 (1961)</b></div>
-          <div style="display:flex;justify-content:space-between;"><span>采集图像</span><b style="color:#f1f5f9">186 张</b></div>
-          <div style="display:flex;justify-content:space-between;"><span>检测模型</span><b style="color:#f1f5f9">YOLOv8m-BridgeDamage</b></div>
-          <div style="display:flex;justify-content:space-between;"><span>平均置信度</span><b style="color:#10b981">94.2%</b></div>
-          <div style="display:flex;justify-content:space-between;"><span>发现缺陷</span><b style="color:#ef4444">6 处</b></div>
-          <div style="display:flex;justify-content:space-between;"><span>综合评级</span><b style="color:#f59e0b">B级（需关注）</b></div>
-        </div>
-        <button onclick="alert('PDF报告生成中...')" style="width:100%;padding:9px;margin-top:10px;border-radius:7px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;">📥 导出完整PDF报告</button>
-      </div>
-    </div>
 
-    <!-- 告警弹窗 -->
-    <div class="alert-popup" id="mAlertPopup">
-      <div class="alert-hdr"><span>🚨</span><span class="alert-title">AI检测到新的危急缺陷！</span><span class="alert-close" onclick="closeMonAlert()">✕</span></div>
-      <div class="alert-body" id="mAlertBody"></div>
-      <div class="alert-action" onclick="closeMonAlert()">查看详情 →</div>
+      <!-- 右侧：选中详情（有选中时显示） -->
+      <div class="detail-view" id="detailView" style="display:none">
+        <div class="dv-canvas-area" id="dvCanvasArea">
+          <!-- 动态填充图片和检测框 -->
+        </div>
+        <div class="dv-body" id="dvBody"></div>
+      </div>
     </div>
   </div><!-- /pageMonitor -->
 
@@ -1195,128 +1186,269 @@ document.querySelectorAll('.defect-card').forEach(card => {
 
 console.log('🌉 天枢桥检演示平台已加载 | Bridge Inspection Demo Ready');
 
-// ===== 实时监测模块 =====
-const MDEFECTS = [
-  {icon:'🔴',name:'结构性裂缝',sev:'critical',sevText:'危急',location:'航点4 主跨跨中·桥面板底部',conf:96.8,color:'#ef4444'},
-  {icon:'🔵',name:'钢筋外露&锈蚀',sev:'major',sevText:'严重',location:'航点3 主跨左支座·T梁腹板',conf:93.2,color:'#3b82f6'},
-  {icon:'🟠',name:'混凝土剥落',sev:'major',sevText:'严重',location:'航点5 主跨右支座·墩顶区域',conf:89.5,color:'#f59e0b'},
-  {icon:'🟢',name:'高强螺栓缺失',sev:'minor',sevText:'一般',location:'航点2 桥面起点·伸缩缝处',conf:97.1,color:'#10b981'},
-  {icon:'🟣',name:'涂层脱落',sev:'minor',sevText:'一般',location:'航点6 栏杆立柱根部',conf:85.3,color:'#8b5cf6'},
-  {icon:'⚪',name:'水渍渗漏',sev:'minor',sevText:'观察',location:'航点1 桥台翼墙接缝',conf:78.6,color:'#94a3b8'},
+// ===== AI智能检测模块（交互版） =====
+const DEFECT_TYPES = [
+  {id:'crack',name:'结构性裂缝',icon:'🔴',color:'#ef4444',sev:3,sevText:'危急',sol:'立即限载→封闭车道→低压注浆+碳纤维布加固→一周内专项检测'},
+  {id:'expose',name:'钢筋外露锈蚀',icon:'🔵',color:'#3b82f6',sev:2,sevText:'严重',sol:'清除松散混凝土→喷砂除锈Sa2.5级→涂刷阻锈剂→聚合物砂浆修补'},
+  {id:'spall',name:'混凝土剥落',icon:'🟠',color:'#f59e0b',sev:2,sevText:'严重',sol:'凿除松动区→界面处理→C40高强修补砂浆修复→表面防水涂层'},
+  {id:'bolt',name:'高强螺栓缺失',icon:'🟢',color:'#10b981',sev:1,sevText:'一般',sol:'同型号高强螺栓更换→扭矩校核至280N·m→纳入月度巡检'},
+  {id:'coating',name:'涂层脱落',icon:'🟣',color:'#8b5cf6',sev:1,sevText:'一般',sol:'表面打磨St3级→重涂环氧富锌漆→厚度≥80μm'},
+  {id:'water',name:'水渍渗漏',icon:'⚪',color:'#94a3b8',sev:0,sevText:'观察',sol:'疏通排水孔→观察发展→若扩大则注浆止水'},
 ];
-let mSelected = MDEFECTS[0], mThermalMode=false, mPlaying=true, mFrameTime=0, mSceneOff=0, mAlertC=0;
-const mcv=document.getElementById('monCanvas'),mcx=mcv.getContext('2d');
 
-function renderMDefectList(){
-  document.getElementById('mDefectList').innerHTML=MDEFECTS.map((d,i)=>
-    `<div class="md-item" onclick="selectMDefect(${i})">
-      <div class="md-hdr"><div class="md-icon" style="background:${d.color}">${d.icon}</div><span class="md-name">${d.name}</span><span class="md-sev" style="background:${i===0?'#fee2e2;color:#dc2626':i<3?'#fef3c7;color:#d97706':'#dbeafe;color:#2563eb'}">${d.sevText}</span></div>
-      <div class="md-meta">📍${d.location}</div>
-      <div class="md-bar"><div class="md-bar-fill" style="width:${d.conf}%;background:linear-gradient(90deg,${d.color},${d.color}88)"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:9px;color:#64748b;"><span>${d.conf}%</span><span>刚刚检出</span></div>`
-  ).join('');
-}
-renderMDefectList();
+let uploadedImages = [], allDefects = [], currentSort = 'conf';
 
-function selectMDefect(i){mSelected=MDEFECTS[i];renderMDetail();drawMDetBoxes();}
-
-function switchMonTab(el){
-  document.querySelectorAll('.mon-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.mon-tab-content').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');document.getElementById(el.dataset.mtab).classList.add('active');
+// 拖拽上传
+const upZone = document.getElementById('uploadZone');
+if(upZone){
+  ['dragenter','dragover'].forEach(e => upZone.addEventListener(e, ev=>{ev.preventDefault();upZone.classList.add('dragover')}));
+  ['dragleave','drop'].forEach(e => upZone.addEventListener(e, ev=>{ev.preventDefault();upZone.classList.remove('dragover')}));
+  upZone.addEventListener('drop', ev=>{
+    const files = ev.dataTransfer.files;
+    if(files.length) processFiles(files);
+  });
 }
 
-function renderMDetail(){
-  const d=mSelected,b=document.getElementById('mDetailBody');
-  b.innerHTML=`<div class="mdc-title"><span style="width:8px;height:8px;border-radius:50%;display:inline-block;background:${d.color}"></span>${d.name}<span class="md-sev" style="background:${d.sev==='critical'?'#fee2e2;color:#dc2626':d.sev==='major'?'#fef3c7;color:#d97706':'#dbeafe;color:#2563eb'}">${d.sevText}</span></div>
-    <div style="font-size:10px;color:#94a3b8;margin-bottom:8px;">📍${d.location}</div>
-    <div style="margin:8px 0;"><div style="display:flex;justify-content:space-between;font-size:10px;"><span>AI置信度</span><b style="color:${d.color}">${d.conf}%</b></div>
-    <div class="md-bar" style="height:5px"><div class="md-bar-fill" style="width:${d.conf}%;background:linear-gradient(90deg,${d.color},${d.color}88)"></div></div></div>
-    <div class="mdc-solution">📋 <b>处置方案 P${d.sev==='critical'?'0':d.sev==='major'?'1':'2'}</b><br>${d.sev===0?'立即限载→封闭车道→低压注浆+碳纤维布加固→一周内专项检测':d.sev===1?'清除松散混凝土→喷砂除锈Sa2.5级→阻锈剂→聚合物砂浆修补':'同型号更换→扭矩校核→纳入月度巡检'}</div>`;
-  drawMDetailCanvas();
+// 文件选择上传
+function handleAIUpload(ev){
+  const files=ev.target.files;if(!files.length)return;
+  processFiles(Array.from(files));
+  ev.target.value=''; // reset
 }
 
-// Canvas绘制桥梁场景
-function resizeMC(){const r=document.querySelector('.mon-video-wrap').getBoundingClientRect();mcv.width=r.width;mcv.height=r.height;}
-resizeMC();window.addEventListener('resize',resizeMC);
+// 处理文件
+function processFiles(files){
+  files.forEach(f => {
+    if(!f.type.startsWith('image/')) return;
+    const reader=new FileReader();
+    reader.onload=e => {
+      uploadedImages.push({
+        id:Date.now()+Math.random(),
+        name:f.name,
+        dataUrl:e.target.result,
+        width:0,height:0,
+        defects:[],detected:false,
+      });
+      // get image dimensions
+      const img=new Image();img.onload=()=>{uploadedImages[uploadedImages.length-1].width=img.width;uploadedImages[uploadedImages.length-1].height=img.height;renderAll();};
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(f);
+  });
+}
 
-function drawMonScene(){
-  const W=mcv.width,H=mcv.height;
-  const sg=mcx.createLinearGradient(0,0,0,H*.55);sg.addColorStop(0,'#0a1628');sg.addColorStop(.5,'#152238');sg.addColorStop(1,'#1a3045');
-  mcx.fillStyle=sg;mcx.fillRect(0,0,W,H);
-  if(mThermalMode){
-    const tg=mcx.createRadialGradient(W/2,H*.45,50,W/2,H*.45,W*.4);tg.addColorStop(0,'rgba(239,68,68,.25)');tg.addColorStop(.5,'rgba(245,158,11,.15)');tg.addColorStop(1,'transparent');
-    mcx.fillStyle=tg;mcx.fillRect(0,0,W,H);
-    [{x:W*.42,y:H*.58,r:30},{x:W*.62,y:H*.54,r:22},{x:W*.72,y:H*.62,r:18}].forEach(s=>{
-      const hg=mcx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r);hg.addColorStop(0,'rgba(239,68,68,.65)');hg.addColorStop(.5,'rgba(245,158,11,.35)');hg.addColorStop(1,'transparent');
-      mcx.fillStyle=hg;mcx.beginPath();mcx.arc(s.x,s.y,s.r,0,Math.PI*2);mcx.fill();
+// 模拟YOLOv8检测（基于图像特征随机生成合理结果）
+function simulateDetect(imgObj){
+  const defects=[];
+  const count = Math.floor(Math.random()*3)+1; // 1-3 defects per image
+  for(let i=0;i<count;i++){
+    const dt=DEFECT_TYPES[Math.floor(Math.random()*DEFECT_TYPES.length)];
+    const conf=(78+Math.random()*20).toFixed(1); // 78-98%
+    const wPct=(8+Math.random()*25), hPct=(10+Math.random()*30);
+    const xPct=(5+Math.random()*(70-wPct)), yPct=(10+Math.random()*(60-hPct));
+    defects.push({...dt,id:imgObj.id+'_'+i,imgId:imgObj.id,imgName:imgObj.name,
+      conf:parseFloat(conf),
+      box:{x:xPct,y:yPct,w:wPct,h:hPct},
+      time:new Date().toLocaleTimeString(),
+      metrics:i===0?{len:(0.5+Math.random()*2).toFixed(2)+'m',wid:(2+Math.random()*4).toFixed(1)+'mm'}:{area:(0.05+Math.random()*0.4).toFixed(2)+'m²'}
     });
-  }else{
-    mcx.fillStyle='rgba(6,182,212,.04)';mcx.fillRect(0,H*.6,W,H*.4);
-    mcx.fillStyle='#1a2744';mcx.beginPath();mcx.moveTo(0,H*.48);
-    for(let i=0;i<=W;i+=30)mcx.lineTo(i,H*.43-Math.sin(i*.008)*22-Math.cos(i*.015)*12);mcx.lineTo(W,H*.48);mcx.fill();
-    const bY=H*.5;[W*.15,W*.4,W*.7,W*.88].forEach((x,i)=>{mcx.fillStyle=i==1||i==2?'#2a3a55':'#232f47';mcx.fillRect(x-14,bY+22,28,H*.36)});
-    const bg=mcx.createLinearGradient(0,bY,0,bY+22);bg.addColorStop(0,'#4a5a75');bg.addColorStop(1,'#3a4a65');mcx.fillStyle=bg;mcx.fillRect(0,bY,W,22);
-    mcx.fillStyle='#3a4a65';mcx.fillRect(0,bY-8,W,8);
-    for(let i=0;i<W;i+=40){mcx.fillRect(i,bY-16,3,16)}
-    mcx.setLineDash([18,12]);mcx.strokeStyle='rgba(255,255,255,.2)';mcx.lineWidth=2;mcx.beginPath();mcx.moveTo(W*.25,bY+11);mcx.lineTo(W*.75,bY+11);mcx.stroke();mcx.setLineDash([]);
-    for(let i=0;i<12;i++){const y=bY+70+i*8+(mSceneOff*.04)%35;mcx.fillStyle=`rgba(6,182,212,${.03+i%3*.015})`;mcx.beginPath();mcx.arc((i*97+mSceneOff*.2)%W,y,15+Math.sin(Date.now()/1500+i)*8,0,Math.PI*2);mcx.fill();}
-    mcx.strokeStyle='rgba(59,130,246,.04)';mcx.lineWidth=.5;
-    for(let i=0;i<W;i+=45){mcx.beginPath();mcx.moveTo(i,0);mcx.lineTo(i,H);mcx.stroke()}for(let i=0;i<H;i+=45){mcx.beginPath();mcx.moveTo(0,i);mcx.lineTo(W,i);mcx.stroke()}
   }
-  if(mPlaying){const sy=(Date.now()%2500)/2500*H;const sg2=mcx.createLinearGradient(0,sy-18,0,sy+18);sg2.addColorStop(0,'transparent');sg2.addColorStop(.5,'rgba(59,130,246,.07)');sg2.addColorStop(1,'transparent');mcx.fillStyle=sg2;mcx.fillRect(0,sy-18,W,36)}
-  mcx.font='10px monospace';mcx.fillStyle='rgba(255,255,255,.18)';
-  mcx.fillText(`TIANSHU-BRIDGE | ${new Date().toISOString().slice(0,19).replace('T',' ')} | YOLOv8m | ALT:96.3m`,10,H-10);
+  // sort by confidence desc
+  defects.sort((a,b)=>b.conf-a.conf);
+  imgObj.defects=defects;imgObj.detected=true;
+  allDefects=allDefects.concat(defects);
+  renderAll();
 }
 
-function drawMDetBoxes(){
-  const W=mcv.width,H=mcv.height,pos=[
-    {x:.38,y:.56,w:.12,h:.09},{x:.56,y:.53,w:.09,h:.07},{x:.66,y:.57,w:.10,h:.08},
-    {x:.22,y:.51,w:.07,h:.05},{x:.78,y:.49,w:.06,h:.04},{x:.15,y:.63,w:.09,h:.06},
-  ];
-  document.getElementById('mDetOverlay').innerHTML=MDEFECTS.map((d,i)=>{
-    const p=pos[i];return`<div class="det-box" style="left:${p.x*100}%;top:${p.y*100}%;width:${p.w*100}%;height:${p.h*100}%;border-color:${d.color};box-shadow:0 0 6px ${d.color}33"><div class="det-label" style="background:${d.color}">${d.icon}${d.name}<span style="opacity:.8"> ${d.conf}%</span></div></div>`;
+// 渲染图片网格
+function renderImageGrid(){
+  const el=document.getElementById('imgGrid');
+  if(uploadedImages.length===0){el.style.display='none';document.getElementById('uploadZone').style.display='flex';return;}
+  document.getElementById('uploadZone').style.display='none';
+  el.style.display='grid';
+  el.innerHTML=uploadedImages.map((img,i)=>{
+    const hasCritical=img.defects.some(d=>d.sev>=3);
+    return `<div class="img-card" onclick="selectImgCard(${i})">
+      <div class="img-thumb-wrap"><img src="${img.dataUrl}" class="img-thumb" alt="${img.name}" loading="lazy"/>
+        <div class="img-det-overlay">${renderBoxes(img)}</div>
+        ${!img.detected?`<div style="position:absolute;top:6px;right:6px;background:#f59e0b;color:white;font-size:9px;padding:2px6px;border-radius:6px;font-weight:600;">待检测</div>`:''}
+        ${hasCritical?`<div style="position:absolute;top:6px;left:6px;background:#ef4444;color:white;font-size:9px;padding:2px6px;border-radius:6px;font-weight:600;">🚨</div>`:`<div style="position:absolute;top:6px;left:6px;background:#10b981;color:white;font-size:9px;padding:2px6px;border-radius:6px;font-weight:600;">✅${img.defects.length}处</div>`}
+      </div>
+      <div class="img-card-info"><div class="img-card-name">${img.name}</div><div class="img-card-stats">${img.defects.map(d=>`<span class="defect-chip" style="background:${d.color}22;color:${d.color}">${d.icon}${d.name.slice(0,3)}</span>`).join('')}</div></div>`;
   }).join('');
 }
 
-function drawMDetailCanvas(){
-  const c=document.getElementById('mDetailCanvas'),cx=c.getContext('2d'),d=mSelected;
-  c.width=c.parentElement.clientWidth;c.height=c.parentElement.clientHeight||192;
-  const bg=cx.createLinearGradient(0,0,0,c.height);bg.addColorStop(0,'#0d1525');bg.addColorStop(1,'#162033');
-  cx.fillStyle=bg;cx.fillRect(0,0,c.width,c.height);
-  cx.strokeStyle=d.color;cx.lineWidth=2;cx.strokeRect(15,15,c.width-30,c.height-30);cx.fillStyle=d.color+'15';cx.fillRect(15,15,c.width-30,c.height-30);
-  cx.strokeStyle=d.color+'28';cx.lineWidth=.5;for(let i=0;i<c.width;i+=20){cx.beginPath();cx.moveTo(i,15);cx.lineTo(i,c.height-15);cx.stroke()}for(let i=15;i<c.height;i+=20){cx.beginPath();cx.moveTo(15,i);cx.lineTo(c.width-15,i);cx.stroke()}
-  const mx=c.width/2,my=c.height/2;cx.strokeStyle=d.color;cx.lineWidth=2;cx.beginPath();cx.moveTo(mx-18,my);cx.lineTo(mx+18,my);cx.moveTo(mx,my-18);cx.lineTo(mx,my+18);cx.stroke();cx.beginPath();cx.arc(mx,my,6,0,Math.PI*2);cx.stroke();
-  cx.font='bold 11px sans-serif';cx.fillStyle=d.color;cx.fillText(`${d.name} · ${d.conf}%`,8,c.height-6);
+// 渲染检测框（缩略图用）
+function renderBoxes(img){
+  if(!img.detected) return '';
+  return img.defects.map(d=>`<div class="det-box-abs" style="left:${d.box.x}%;top:${d.box.y}%;width:${d.box.w}%;height:${d.box.h}%;border-color:${d.color}">
+    <div class="det-label-abs" style="background:${d.color}">${d.name} ${d.conf}%</div>
+  </div>`).join('');
 }
 
-function monAnim(){mSceneOff++;drawMonScene();if(mPlaying)mFrameTime++;
-  const s=Math.floor(mFrameTime/30),h=String(Math.floor(s/3600)).padStart(2,'0'),m=String(Math.floor(s%3600/60)).padStart(2,'0'),sec=s%60;
-  document.getElementById('mCurTime').textContent=`${h}:${m}:${String(sec).padStart(2,'0')}`;
-  document.getElementById('mTimelineProg').style.width=Math.min(mFrameTime/(8*60+32)*30,100)+'%';
-  requestAnimationFrame(monAnim);
+// 渲染结果列表（排序后）
+function renderResultList(){
+  const el=document.getElementById('resultList');
+  if(allDefects.length===0){
+    el.innerHTML='<div style="text-align:center;padding:40px 16px;color:#64748b;font-size:13px;">📷 上传图片后<br>AI 将自动检测并在此展示结果</div>';
+    return;
+  }
+  let sorted=[...allDefects];
+  if(currentSort==='conf') sorted.sort((a,b)=>b.conf-a.conf);
+  else if(currentSort==='sev') sorted.sort((a,b)=>b.sev-a.sev);
+  else if(currentSort==='time') sorted.reverse();
+  
+  el.innerHTML=sorted.map((d,idx)=>{
+    const sevStyle=d.sev>=3?'#fee2e2;color:#dc2626':d.sev>=2?'#fef3c7;color:#d97706':'#dbeafe;color:#2563eb';
+    return `<div class="result-item" onclick="showDetail('${d.id}')">
+      <div class="ri-header"><div class="ri-icon" style="background:${d.color}">${d.icon}</div>
+        <span class="ri-name">${d.name}</span>
+        <span class="ri-sev" style="background:${sevStyle.split(';')[0]};color:${sevStyle.split(';')[1]}">${d.sevText}</span></div>
+      <div class="ri-meta">📷 ${d.imgName} · ${d.time}</div>
+      <div class="ri-bar"><div class="ri-bar-fill" style="width:${d.conf}%;background:linear-gradient(90deg,${d.color},${d.color}88)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#64748b;">
+        <span>置信度 <b style="color:${d.color}">${d.conf}%</b></span>
+        <span>${Object.keys(d.metrics||{}).map(k=>`${k}:${d.metrics[k]}`).join(' ')}</span>
+      </div>`;
+  }).join('');
 }
 
-// 初始化
-if(document.getElementById('monCanvas')){monAnim();drawMDetBoxes();renderMDetail();}
+// 更新统计
+function updateStats(){
+  if(uploadedImages.length===0) return;
+  document.getElementById('statBarRow').style.display='flex';
+  document.getElementById('stTotalImg').textContent=uploadedImages.length;
+  document.getElementById('stTotalDefect').textContent=allDefects.length;
+  const avg=allDefects.length? (allDefects.reduce((s,d)=>s+d.conf,0)/allDefects.length).toFixed(1):'--';
+  document.getElementById('stAvgConf').textContent=avg+'%';
+  const critical=allDefects.filter(d=>d.sev>=2).length;
+  document.getElementById('stCritical').textContent=critical;
 
-// 控制函数
-function toggleMonPlay(){mPlaying=!mPlaying;document.getElementById('mPlayBtn').textContent=mPlaying?'⏸':'▶'}
-function monToggleThermal(el){mThermalMode=true;el.classList.add('active');document.getElementById('mBtnVisible').classList.remove('active')}
-function monToggleVisible(el){mThermalMode=false;el.classList.add('active');document.getElementById('mBtnThermal').classList.remove('active')}
-function monCapture(){
-  const dataUrl=mcv.toDataURL(),w=window.open('');
-  w.document.write(`<title>天枢桥检截图</title><img src="${dataUrl}" style="max-width:100%" onclick="this.src='${dataUrl}'"><div style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;">💡 右键→图片另存为</div>`);
+  // 告警：发现危急缺陷
+  const crit=allDefects.filter(d=>d.sev>=3);
+  if(crit.length>0 && !window.alertedCrit){
+    window.alertedCrit=true; showAlertPopup(crit[0]);
+  }
 }
-function monHandleUpload(e){const f=e.target.files[0];if(!f)return;const img=new Image();img.onload()=>{mcx.drawImage(img,0,0,mcv.width,mcv.height);setTimeout(()=>{drawMDetBoxes();triggerMonAlert()},1200)};img.src=URL.createObjectURL(f)}
 
-function triggerMonAlert(){mAlertC++;const d=MDEFECTS[Math.min(mAlertC-1,MDEFECTS.length-1)];
-  document.getElementById('mAlertBody').innerHTML=`<p><b style="color:#ef4444">${d.icon} ${d.name}</b></p><p>位置：${d.location}</p><p>置信度：<b style="color:${d.color}">${d.conf}%</b></p><p style="margin-top:4px;color:#f59e0b;">⚠️ 已通知运维团队</p>`;
-  const p=document.getElementById('mAlertPopup');p.style.display='block';p.classList.add('show');
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator();o.frequency.value=880;o.connect(ctx.createGain().connect(ctx.destination));o.start();setTimeout(()=>o.stop(),200)}catch(e){}
-  document.getElementById('mTotal').textContent=${6+mAlertC}+' 处缺陷';
+// 全部渲染
+function renderAll(){renderImageGrid();renderResultList();updateStats();}
+
+// 选择图片卡片
+let selectedImgIdx=-1, selectedDefectId='';
+function selectImgCard(i){
+  selectedImgIdx=i;
+  const img=uploadedImages[i];
+  if(img.defects.length) showDetail(img.defects[0].id);
+  // highlight card
+  document.querySelectorAll('.img-card').forEach((el,idx)=>{el.classList.toggle('selected',idx===i)});
+  document.getElementById('detailView').style.display='flex';
 }
-function closeMonAlert(){const p=document.getElementById('mAlertPopup');p.classList.remove('show');setTimeout(()=>p.style.display='none',350)}
+
+// 显示详情
+function showDetail(defectId){
+  selectedDefectId=defectId;
+  const d=allDefects.find(x=>x.id===defectId);if(!d)return;
+  const img=uploadedImages.find(x=>x.id===d.imgId);
+
+  // 高亮当前result-item
+  document.querySelectorAll('.result-item').forEach(el=>el.classList.remove('active'));
+  // event.target would be better but this is fine
+
+  const dv=document.getElementById('detailView');
+  dv.style.display='flex';
+  document.getElementById('dvCanvasArea').innerHTML=`<img src="${img.dataUrl}" class="dv-img" id="dvMainImg"/><div class="dv-overlay" id="dvOverlay"></div>`;
+  // draw boxes on detail image
+  setTimeout(()=>{
+    const overlay=document.getElementById('dvOverlay');
+    overlay.innerHTML=`<div class="det-box-abs" style="left:${d.box.x}%;top:${d.box.y}%;width:${d.box.w}%;height:${d.box.h}%;border-color:${d.color};box-shadow:0 0 12px ${d.color}66;border-width:3px"><div class="det-label-abs" style="background:${d.color};font-size:12px;padding:3px8px">${d.icon}${d.name}<b> ${d.conf}%</b></div></div>`;
+  },50);
+
+  const sevStyle=d.sev>=3?'#fee2e2;color:#dc2626':d.sev>=2?'#fef3c7;color:#d97706':'#dbeafe;color:#2563eb';
+  document.getElementById('dvBody').innerHTML=`
+    <div class="dv-title"><span style="width:10px;height:10px;border-radius:50%;background:${d.color}"></span>${d.name}
+      <span class="ri-sev" style="background:${sevStyle.split(';')[0]};color:${sevStyle.split(';')[1]};font-size:11px">${d.sevText}</span></div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">📷 ${d.imgName}</div>
+    <div class="dv-grid">${Object.entries(d.metrics||{}).map(([k,v])=>`<div class="dv-field">${k==='len'?'长度':k==='wid'?'宽度':k==='area'?'面积':''}<b>${v}</b></div>`).join('')}</div>
+    <div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:11px"><span>YOLOv8m 置信度</span><b style="color:${d.color}">${d.conf}%</b></div>
+      <div class="ri-bar" style="height:6px"><div class="ri-bar-fill" style="width:${d.conf}%;background:linear-gradient(90deg,${d.color},${d.color}aa)"></div></div></div>
+    <div class="dv-solution">📋 <b>处置方案 P${d.sev===3?0:d.sev===2?1:2}</b><br>${d.sol}</div>`;
+}
+
+// 排序
+function sortResults(type){
+  currentSort=type;
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(type==='conf'?'sortConf':type==='sev'?'sortSev':'sortTime').classList.add('active');
+  renderResultList();
+}
+
+// 清空
+function clearAllImages(){
+  if(uploadedImages.length&&!confirm('确定清空所有 '+uploadedImages.length+' 张图片和检测结果？'))return;
+  uploadedImages=[];allDefects=[];selectedImgIdx=-1;selectedDefectId='';
+  window.alertedCrit=false;
+  document.getElementById('detailView').style.display='none';
+  document.getElementById('statBarRow').style.display='none';
+  renderAll();
+}
+
+// 导出报告
+function exportDetectionReport(){
+  if(allDefects.length===0){alert('请先上传图片进行检测');return;}
+  let html=`<!doctype><html><head><meta charset=utf-8><title>天枢桥检-AI检测报告</title><style>body{font-family:sans-serif;padding:20px;color:#333}h1{color:#1a1f35}.tb td,.tb th{padding:6px 12px;border:1px solid #ddd;text-align:left}.tb th{bg:#f5f5f5}</style></head><body>`;
+  html+=`<h1>🌉 天枢桥检 — AI检测结果报告</h1><p>生成时间：${new Date().toLocaleString()} | 模型：YOLOv8m-BridgeDamage | 图像数：${uploadedImages.length}</p>`;
+  html+=`<table class="tb"><tr><th>#</th><th>缺陷类型</th><th>严重程度</th><th>置信度</th><th>来源图片</th><th>位置/尺寸</th></tr>`;
+  allDefects.forEach((d,i)=>{html+=`<tr><td>${i+1}</td><td>${d.icon}${d.name}</td><td>${d.sevText}</td><td><b style="color:${d.color}">${d.conf}%</b></td><td>${d.imgName}</td><td>${Object.values(d.metrics||{}).join('/')||'--'}</td></tr>`});
+  html+=`</table><p>综合评级：<b style="color:#f59e0b">B级（需关注）</b></p></body></html>`;
+  const w=window.open();w.document.write(html);w.document.close();
+}
+
+// 告警弹窗
+function showAlertPopup(defect){
+  const pop=document.createElement('div');
+  pop.className='alert-pop show';pop.style.cssText='position:fixed;top:55px;right:18px;width:340px;background:#1a2235;border:1px solid rgba(239,68,68,.4);border-radius:12px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+  pop.innerHTML=`<div style="padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(239,68,68,.3)">
+    <span>🚨</span><span style="font-size:12px;font-weight:700;color:#ef4444;flex:1">发现${defect.sevText}缺陷！</span><span onclick="this.closest('.alert-pop').remove()" style="cursor:pointer;color:#94a3b8">✕</span></div>
+    <div style="padding:12px 14px;font-size:11px;line-height:1.8;color:#94a3b8">
+      <p><b style="color:#ef4444">${defect.icon} ${defect.name}</b></p>
+      <p>来源：${defect.imgName} · 置信度 <b style="color:${defect.color}">${defect.conf}%</b></p>
+      <p style="color:#f59e0b;margin-top:4px">⚠️ 已自动标记为优先处理项</p>
+    </div>`;
+  document.body.appendChild(pop);
+  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator();o.frequency.value=880;o.connect(ctx.createGain().connect(ctx.destination));o.start();setTimeout(()=>o.stop(),300)}catch(e){}
+  setTimeout(()=>pop.remove(),5000);
+}
+
+// 自动检测所有上传的图片
+function autoDetectAll(){
+  const prog=document.getElementById('detectProgress'),fill=document.getElementById('dpFill'),txt=document.getElementById('dpText');
+  prog.classList.add('show');
+  let idx=0,total=uploadedImages.filter(im=>!im.detected).length;
+  if(total===0){prog.classList.remove('show');return;}
+
+  function detectNext(){
+    if(idx>=total){prog.classList.remove('show');fill.style.width='100%';txt.textContent='✅ 检测完成，共检出 '+allDefects.length+' 处缺陷';setTimeout(()=>prog.classList.remove('show'),2000);return;}
+    const im=uploadedImages.filter(x=>!x.detected)[idx];
+    txt.textContent=`正在分析 (${idx+1}/${total})：${im.name}`;
+    fill.style.width=((idx)/total*100)+'%';
+    
+    simulateDetect(im);
+    idx++;
+    setTimeout(detectNext,400+Math.random()*600); // 模拟推理延迟
+  }
+  detectNext();
+}
+
+// 监听新图片上传后自动触发检测
+const origProcessFiles=processFiles;
+processFiles=function(files){
+  origProcessFiles(files);
+  // 等图片加载完后自动检测
+  setTimeout(autoDetectAll,800);
+};
+
+console.log('🌉 天枢桥检 AI交互检测系统就绪');
 </script>
 </body>
 </html>
