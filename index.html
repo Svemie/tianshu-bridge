@@ -1367,8 +1367,18 @@ async function detectWithRealModel(imgObj){
 
     const session=await loadONNXModel();
     if(!session){
-      // 回退到智能模拟
-      await simulateDetect(imgObj); resolve(); return;
+      // 模型不可用，标记为检测失败（不伪造数据）
+      const defects=[{
+        id:imgObj.id+'_err', imgId:imgObj.id, imgName:imgObj.name,
+        name:'⚠️ 模型未加载', icon:'⚠️', color:'#6b7280',
+        sev:-2, sevText:'异常', sol:'请检查网络后刷新页面，确保 best.onnx 模型文件存在',
+        conf:0, box:{x:10,y:10,w:80,h:80},
+        time:new Date().toLocaleTimeString(), isReal:false, isHealthy:false, isError:true,
+        metrics:{status:'ONNX模型加载失败'}
+      }];
+      imgObj.defects=defects; imgObj.detected=true; imgObj.usedRealModel=false;
+      allDefects=allDefects.concat(defects); renderAll();
+      resolve(); return;
     }
 
     try{
@@ -1409,18 +1419,18 @@ async function detectWithRealModel(imgObj){
           // classId=1 (normal) 不作为缺陷报告
         }
 
-        // 如果没有检测到缺陷但图像看起来有问题，补充分析标注为"正常"
+        // 模型未检测到缺陷（全部判定为normal或低于阈值）
         if(defects.length===0){
           defects.push({
             id:imgObj.id+'_healthy',
             imgId:imgObj.id, imgName:imgObj.name,
-            name:'结构正常', icon:'✅', color:'#10b981',
+            name:'✅ 未检测到明显缺陷', icon:'✅', color:'#10b981',
             sev:-1, sevText:'健康', sol:'无需处置，纳入常规巡检周期',
-            conf:95+(Math.random()*4),
+            conf:0,
             box:{x:5,y:5,w:90,h:90},
             time:new Date().toLocaleTimeString(),
             isReal:true,
-            metrics:{status:'无可见缺陷'},
+            metrics:{status:'YOLOv8n未检出裂缝（当前模型仅支持裂缝检测）'},
             realClassId:1,
             isHealthy:true
           });
@@ -1435,7 +1445,18 @@ async function detectWithRealModel(imgObj){
       imgEl.src=imgObj.dataUrl;
     }catch(err){
       console.error('推理出错:',err);
-      await simulateDetect(imgObj); resolve();
+      // 推理失败时不伪造数据，如实报告
+      const defects=[{
+        id:imgObj.id+'_err', imgId:imgObj.id, imgName:imgObj.name,
+        name:'⚠️ 推理异常', icon:'⚠️', color:'#6b7280',
+        sev:-2, sevText:'异常', sol:'该图像推理过程中出错，请检查图片格式或刷新页面重试',
+        conf:0, box:{x:10,y:10,w:80,h:80},
+        time:new Date().toLocaleTimeString(), isReal:false, isHealthy:false, isError:true,
+        metrics:{status:'推理错误: '+err.message}
+      }];
+      imgObj.defects=defects; imgObj.detected=true; imgObj.usedRealModel=false;
+      allDefects=allDefects.concat(defects); renderAll();
+      resolve();
     }
   });
 }
@@ -1728,7 +1749,7 @@ async function autoDetectAll(){
       prog.classList.remove('show');fill.style.width='100%';
       const realCount=allDefects.filter(d=>d.isReal).length;
       const simCount=allDefects.length-realCount;
-      txt.textContent=`✅ 检测完成 | 真实AI:${realCount}处${simCount>0?' 模拟:'+simCount+'处':''}`;
+      txt.textContent=`✅ 检测完成 | 检测到缺陷:${realCount}处`;
       setTimeout(()=>prog.classList.remove('show'),2500);
       return;
     }
@@ -1736,12 +1757,8 @@ async function autoDetectAll(){
     txt.textContent=`正在分析 (${idx+1}/${total})：${im.name}${modelLoaded?' [YOLOv8n]':''}`;
     fill.style.width=((idx)/total*100)+'%';
 
-    // 优先使用真实模型，不可用时回退到增强模拟
-    if(modelLoaded){
-      await detectWithRealModel(im);
-    }else{
-      await simulateDetect(im);
-    }
+    // 统一使用真实模型检测，不使用模拟数据
+    await detectWithRealModel(im);
     idx++;
     setTimeout(detectNext,300+Math.random()*400);
   }
