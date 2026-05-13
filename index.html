@@ -3,1030 +3,913 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- ====== SEO & 搜索引擎收录 ====== -->
-<title>天枢桥检 - 桥梁智能巡检与AI定损系统 | YOLOv8+无人机+深度学习</title>
-<meta name="description" content="天枢桥检是基于YOLOv8深度学习的桥梁智能巡检系统，采用无人机搭载双摄像头+红外热成像，自动识别裂缝、钢筋外露、混凝土剥落等7类桥梁缺陷，AI置信度达96.8%。适用于公路/铁路/市政桥梁安全检测。">
-<meta name="keywords" content="天枢桥检,桥梁检测,YOLOv8,无人机巡检,AI定损,裂缝检测,混凝土缺陷,红外热成像,深度学习,智能巡检,Jetson Orin NX">
-<meta name="author" content="天枢桥检团队">
-<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
-<link rel="canonical" href="https://你的用户名.github.io/tianshu-bridge-inspection/">
-
-<!-- Open Graph / 社交分享 -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="天枢桥检 — 桥梁智能巡检与AI定损系统">
-<meta property="og:description" content="基于YOLOv8的无人机桥梁智能巡检平台，AI检测精度96.8%，支持7类结构缺陷自动识别与定损报告生成。">
-<meta property="og:image" content="https://你的用户名.github.io/tianshu-bridge-inspection/og-image.png">
-<meta property="og:url" content="https://你的用户名.github.io/tianshu-bridge-inspection/">
-<meta property="og:site_name" content="天枢桥检">
-<meta property="og:locale" content="zh_CN">
-
-<!-- 百度验证预留 -->
-<!--<meta name="baidu-site-verification" content="你的验证码">-->
-
-<!-- Favicon -->
+<title>天枢桥检 — 实时智能巡检监控平台</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
 <style>
-/* ========== 全局重置 & 变量 ========== */
+/* ===== 全局变量 & 重置 ===== */
 :root {
-  --bg-dark: #1a1f35;
-  --bg-sidebar: #151928;
-  --bg-card: #ffffff;
-  --bg-panel: #f5f7fa;
-  --primary: #4361ee;
-  --primary-light: #6b8cff;
-  --primary-dark: #3451d1;
-  --accent-red: #e74c3c;
-  --accent-orange: #f39c12;
-  --accent-green: #27ae60;
-  --accent-blue: #3498db;
-  --text-primary: #2d3436;
-  --text-secondary: #636e72;
-  --text-light: #b2bec3;
-  --text-white: #ffffff;
-  --border-color: #e2e8f0;
-  --shadow: 0 2px 12px rgba(0,0,0,.08);
-  --radius: 8px;
-  --sidebar-w: 56px;
-  --left-panel-w: 300px;
-  --right-panel-w: 380px;
+  --bg-dark: #0a0e1a;
+  --bg-panel: #111827;
+  --bg-card: #1a2235;
+  --bg-card-hover: #222d44;
+  --primary: #3b82f6;
+  --primary-glow: rgba(59,130,246,.35);
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --red: #ef4444;
+  --orange: #f59e0b;
+  --purple: #8b5cf6;
+  --yellow: #eab308;
+  --text-white: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --border: rgba(148,163,184,.12);
+  --glow-blue: 0 0 20px rgba(59,130,246,.3);
+  --glow-red: 0 0 20px rgba(239,68,68,.5);
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg-panel); color: var(--text-primary); overflow: hidden; height: 100vh; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg-dark); color:var(--text-white);
+  overflow:hidden; height:100vh; font-size:14px;
+}
 
-/* ========== 顶栏 ========== */
+/* ===== 顶栏 ===== */
 .topbar {
-  height: 56px; background: var(--bg-dark);
-  display: flex; align-items: center; padding: 0 20px;
-  color: var(--text-white); gap: 16px;
-  position: relative; z-index: 100;
+  height:52px; background:linear-gradient(90deg,#0a0e1a,#111827,#0a0e1a);
+  display:flex; align-items:center; padding:0 20px; gap:16px;
+  border-bottom:1px solid var(--border); position:relative; z-index:200;
 }
-.topbar-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; letter-spacing: 2px; }
-.topbar-logo .icon { width: 32px; height: 32px; background: linear-gradient(135deg,#4361ee,#7209b7); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-.topbar-subtitle { font-size: 11px; color: var(--text-light); margin-top: 2px; }
-.topbar-tabs { display: flex; gap: 4px; margin-left: 24px; }
-.tab-btn {
-  padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
-  background: transparent; color: #8892a8; border: none; transition: .2s;
-  display: flex; align-items: center; gap: 6px;
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon {
+  width:34px;height:34px;background:linear-gradient(135deg,var(--primary),var(--purple));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;
+  animation:pulse 2s infinite;
 }
-.tab-btn:hover { color: var(--text-white); background: rgba(255,255,255,.06); }
-.tab-btn.active { background: rgba(255,255,255,.12); color: var(--text-white); }
-.tab-btn .tag { font-size: 10px; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,.15); }
-.topbar-spacer { flex: 1; }
-.btn-primary {
-  padding: 7px 18px; background: var(--primary); color: white;
-  border: none; border-radius: 6px; font-size: 13px; cursor: pointer;
-  display: flex; align-items: center; gap: 6px; transition: .2s;
-}
-.btn-primary:hover { background: var(--primary-dark); }
-
-/* ========== 左侧导航栏（图标） ========== */
-.sidebar {
-  width: var(--sidebar-w); background: var(--bg-sidebar);
-  display: flex; flex-direction: column; align-items: center;
-  padding-top: 12px; gap: 4px; z-index: 90;
-  position: absolute; left: 0; top: 56px; bottom: 0;
-}
-.nav-icon {
-  width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; transition: .2s; color: #6b7a99; position: relative;
-}
-.nav-icon:hover { background: rgba(67,97,238,.12); color: var(--primary-light); }
-.nav-icon.active { background: var(--primary); color: white; }
-.nav-icon .dot {
-  position: absolute; top: 6px; right: 6px; width: 7px; height: 7px;
-  border-radius: 50%; background: var(--accent-red); display: none;
-}
-.nav-icon.active .dot { display: block; }
-
-/* ========== 主内容区 ========== */
-.main-area {
-  position: absolute; left: var(--sidebar-w); top: 56px; right: 0; bottom: 0;
-  display: flex; overflow: hidden;
-}
-
-/* ---------- 页面容器 ---------- */
-.page { display: none; width: 100%; height: 100%; }
-.page.active { display: flex; }
-
-/* ========== 航线管理页面 ========== */
-.route-left-panel {
-  width: var(--left-panel-w); background: var(--bg-card);
-  padding: 16px; overflow-y: auto; border-right: 1px solid var(--border-color);
-  flex-shrink: 0;
-}
-.route-center {
-  flex: 1; position: relative; overflow: hidden;
-  background: linear-gradient(180deg, #2d4a3a 0%, #3d5a48 30%, #4a6050 60%, #5a7060 100%);
-}
-.route-right-panel {
-  width: var(--right-panel-w); background: var(--bg-card);
-  border-left: 1px solid var(--border-color);
-  overflow-y: auto; flex-shrink: 0;
-}
-
-/* 左面板样式 */
-.panel-section { margin-bottom: 20px; }
-.panel-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; }
-.toggle-group { display: flex; gap: 8px; }
-.toggle-btn {
-  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
-  border: 1px solid var(--border-color); background: white; color: var(--text-secondary);
-  transition: .2s;
-}
-.toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-.slider-row { display: flex; align-items: center; justify-content: space-between; margin: 10px 0; }
-.slider-icon { font-size: 24px; width: 36px; text-align: center; }
-.slider-track {
-  flex: 1; height: 4px; background: #ddd; border-radius: 2px; margin: 0 12px; position: relative;
-}
-.slider-fill { height: 100%; background: var(--primary); border-radius: 2px; }
-.slider-value { font-size: 14px; font-weight: 600; color: var(--text-primary); width: 42px; text-align: right; }
-
-/* 地图区域 */
-.map-container { width: 100%; height: 100%; position: relative; overflow: hidden; }
-.map-info-bar {
-  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-  background: white; border-radius: 10px; padding: 10px 20px;
-  box-shadow: var(--shadow); z-index: 10; display: flex; align-items: center; gap: 16px;
-}
-.map-info-bar h3 { font-size: 15px; color: var(--text-primary); }
-.map-info-bar .meta { font-size: 12px; color: var(--text-secondary); }
-.map-info-bar strong { color: var(--primary); }
-
-/* 桥梁SVG */
-.bridge-svg-layer { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); width: 600px; opacity: .85; }
-
-/* 航点标记 */
-.waypoint-marker {
-  position: absolute; width: 28px; height: 28px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: white; cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,.25); z-index: 5; transition: .2s;
-}
-.waypoint-marker:hover { transform: scale(1.15); }
-.wp-active { background: var(--primary); }
-.wp-done { background: var(--accent-green); }
-.wp-pending { background: #95a5a6; }
-.wp-label {
-  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
-  font-size: 10px; white-space: nowrap; background: rgba(0,0,0,.55);
-  color: white; padding: 2px 6px; border-radius: 4px;
-}
-
-/* 航线连线 SVG */
-.flight-path-svg { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-
-/* 底部航点信息条 */
-.waypoint-info-bar {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: white; padding: 10px 16px;
-  display: flex; align-items: center; gap: 20px;
-  box-shadow: 0 -2px 10px rgba(0,0,0,.08); z-index: 20;
-}
-.wp-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-green); }
-.wp-name { font-size: 14px; font-weight: 600; }
-.info-item { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
-.info-item strong { color: var(--text-primary); }
-
-/* AI检测右侧面板 */
-.ai-header {
-  background: linear-gradient(135deg, var(--bg-dark), #2a3a66);
-  color: white; padding: 14px 16px; display: flex;
-  align-items: center; justify-content: space-between;
-}
-.ai-header h3 { font-size: 14px; }
-.badge-danger {
-  background: var(--accent-red); color: white; padding: 3px 10px;
-  border-radius: 12px; font-size: 12px; font-weight: 600;
-}
-.defect-card {
-  padding: 14px 16px; border-bottom: 1px solid var(--border-color);
-  cursor: pointer; transition: .15s;
-}
-.defect-card:hover { background: #f8fafc; }
-.defect-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.defect-icon {
-  width: 22px; height: 22px; border-radius: 6px; display: flex;
-  align-items: center; justify-content: center; font-size: 12px; color: white;
-}
-.icon-crack { background: var(--accent-red); }
-.icon-expose { background: var(--accent-blue); }
-.icon-spall { background: var(--accent-orange); }
-.icon-bolt { background: var(--accent-green); }
-.defect-name { font-size: 14px; font-weight: 600; flex: 1; }
-.severity-tag {
-  font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;
-}
-.sev-critical { background: #fee2e2; color: #dc2626; }
-.sev-major { background: #fef3c7; color: #d97706; }
-.sev-minor { background: #dbeafe; color: #2563eb; }
-.defect-location { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
-.defect-metrics { display: flex; gap: 12px; font-size: 11px; color: var(--text-secondary); flex-wrap: wrap; }
-.defect-metrics b { color: var(--text-primary); }
-.confidence-bar { margin-top: 8px; }
-.confidence-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 3px; display: flex; justify-content: space-between; }
-.confidence-track { height: 5px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
-.confidence-fill { height: 100%; border-radius: 3px; }
-.solution-box {
-  background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px;
-  padding: 8px 10px; margin-top: 8px; font-size: 11px; color: #047857; line-height: 1.6;
-}
-
-/* 统计底部 */
-.stats-footer {
-  padding: 12px 16px; border-top: 1px solid var(--border-color);
-  display: flex; justify-content: space-around; background: #fafbfc;
-}
-.stat-item { text-align: center; }
-.stat-num { font-size: 18px; font-weight: 700; }
-.stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-
-/* ========== 排期管理页面 ========== */
-.schedule-left-panel {
-  width: 240px; background: var(--bg-card);
-  padding: 16px; border-right: 1px solid var(--border-color);
-  overflow-y: auto; flex-shrink: 0;
-}
-.schedule-center { flex: 1; padding: 20px; overflow-y: auto; background: white; }
-.schedule-right-panel {
-  width: 320px; background: var(--bg-card);
-  border-left: 1px solid var(--border-color);
-  overflow-y: auto; flex-shrink: 0;
-}
-
-.filter-group { margin-bottom: 18px; }
-.filter-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-.filter-option {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 10px; border-radius: 6px; cursor: pointer;
-  font-size: 13px; transition: .15s; color: var(--text-primary);
-}
-.filter-option:hover { background: #f1f5f9; }
-.filter-option.active { background: #eff6ff; color: var(--primary); font-weight: 600; }
-.filter-count { font-size: 12px; color: var(--text-light); }
-.status-chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+@keyframes pulse { 0%,100%{box-shadow:var(--glow-blue)} 50%{box-shadow:0 0 30px rgba(59,130,246,.5)} }
+.logo-text h1 { font-size:17px; letter-spacing:3px; font-weight:800; }
+.logo-text span { font-size:10px; color:var(--text-dim); display:block; }
+.topbar-center { flex:1; display:flex; justify-content:center; gap:20px; }
 .status-chip {
-  padding: 5px 12px; border-radius: 14px; font-size: 12px; cursor: pointer;
-  border: 1px solid var(--border-color); background: white; transition: .15s;
+  padding:4px 14px;border-radius:20px;font-size:11px;font-weight:600;
+  background:rgba(16,185,129,.15);color:var(--green);
+  border:1px solid rgba(16,185,129,.3);display:flex;align-items:center;gap:6px;
 }
-.status-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+.status-chip.live { animation:livePulse 1.5s infinite; }
+@keyframes livePulse { 0%,100%{opacity:1}50%{opacity:.5} }
+.status-chip .dot { width:7px;height:7px;background:var(--green);border-radius:50%; }
+.topbar-right { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-muted); }
 
-/* 日历头部 */
-.calendar-toolbar {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-.calendar-nav { display: flex; align-items: center; gap: 16px; }
-.calendar-nav button {
-  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color);
-  background: white; cursor: pointer; font-size: 16px; display: flex;
-  align-items: center; justify-content: center; transition: .15s;
-}
-.calendar-nav button:hover { background: #f1f5f9; }
-.calendar-title { font-size: 20px; font-weight: 700; }
-.view-tabs { display: flex; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 8px; }
-.view-tab {
-  padding: 5px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
-  border: none; background: transparent; color: var(--text-secondary); transition: .15s;
-}
-.view-tab.active { background: white; color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,.08); font-weight: 600; }
+/* ===== 主布局 ===== */
+.main-layout { display:flex; height:calc(100vh - 52px); }
 
-.toolbar-actions { display: flex; gap: 8px; }
-.action-btn-sm {
-  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
-  border: 1px solid var(--border-color); background: white; display: flex;
-  align-items: center; gap: 4px; transition: .15s;
+/* ===== 左侧面板：统计 + 缺陷列表 ===== */
+.left-panel {
+  width:320px; background:var(--bg-panel);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden; flex-shrink:0;
 }
-.action-btn-sm.primary { background: var(--primary); color: white; border-color: var(--primary); }
-.action-btn-sm:hover { border-color: var(--primary); color: var(--primary); }
-.action-btn-sm.primary:hover { background: var(--primary-dark); }
+.panel-header {
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-header h2 { font-size:14px; font-weight:700; }
+.panel-badge {
+  background:rgba(239,68,68,.15);color:var(--red);
+  padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;
+}
 
-/* 日历网格 */
-.calendar-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+/* 统计卡片网格 */
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px 16px; }
+.stat-card {
+  background:var(--bg-card);border-radius:10px;padding:12px;
+  text-align:center;border:1px solid var(--border);
 }
-.cal-header-cell {
-  padding: 10px; text-align: center; font-size: 12px; font-weight: 600;
-  color: var(--text-secondary);
-}
-.cal-day {
-  min-height: 90px; padding: 6px; border-radius: 8px;
-  border: 1px solid transparent; transition: .15s; cursor: pointer;
-  background: #fafbfc;
-}
-.cal-day:hover { border-color: #cbd5e1; background: white; }
-.cal-day.today { border: 2px solid var(--primary); background: #eff6ff; }
-.cal-day.other-month { opacity: .4; }
-.day-num { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-.today .day-num { color: var(--primary); }
-.task-pill {
-  padding: 3px 6px; border-radius: 4px; font-size: 10px; color: white;
-  margin-bottom: 3px; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; cursor: pointer; line-height: 1.4;
-}
-.task-pill:hover { opacity: .85; }
-.pill-blue { background: #4361ee; }
-.pill-green { background: #27ae60; }
-.pill-orange { background: #f39c12; }
-.pill-red { background: #e74c3c; }
-.pill-purple { background: #8b5cf6; }
-.pill-check { display: inline-block; margin-left: 3px; }
+.stat-num { font-size:26px; font-weight:800; line-height:1.2; }
+.stat-label { font-size:11px; color:var(--text-muted); margin-top:2px; }
+.stat-trend { font-size:10px; margin-top:4px; }
+.trend-up { color:var(--red); }
+.trend-down { color:var(--green); }
 
-/* 右侧详情面板 */
-.detail-header {
-  padding: 16px; border-bottom: 1px solid var(--border-color);
-}
-.detail-date-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.detail-date { font-size: 20px; font-weight: 700; }
-.detail-weekday { font-size: 13px; color: var(--text-secondary); }
-.detail-badge {
-  padding: 4px 12px; border-radius: 14px; font-size: 12px; font-weight: 600;
-  background: #eff6ff; color: var(--primary);
-}
-.detail-summary { display: flex; gap: 16px; font-size: 12px; color: var(--text-secondary); }
-.summary-stat { display: flex; align-items: center; gap: 4px; }
+/* 缺陷分类 */
 .section-title {
-  font-size: 13px; font-weight: 600; color: var(--text-secondary);
-  padding: 12px 16px 8px; text-transform: uppercase; letter-spacing: .5px;
+  font-size:12px;color:var(--text-dim);padding:10px 16px 6px;
+  font-weight:600;text-transform:uppercase;letter-spacing:1px;
 }
-.task-detail-card {
-  margin: 0 16px 10px; padding: 12px; border-radius: 8px;
-  border: 1px solid var(--border-color); cursor: pointer; transition: .15s;
-}
-.task-detail-card:hover { box-shadow: var(--shadow); border-color: var(--primary-light); }
-.tdc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
-.tdc-title { font-size: 14px; font-weight: 600; }
-.tdc-time { font-size: 11px; color: var(--text-light); }
-.tdc-subtitle { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-.tdc-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.tag-mini {
-  font-size: 10px; padding: 2px 7px; border-radius: 4px; background: #f1f5f9;
-}
-.tag-success { background: #d1fae5; color: #059669; }
-.tag-warning { background: #fef3c7; color: #d97706; }
-.tag-danger { background: #fee2e2; color: #dc2626; }
-.progress-mini { margin-top: 8px; height: 4px; background: #e9ecef; border-radius: 2px; overflow: hidden; }
-.progress-mini-fill { height: 100%; border-radius: 2px; background: var(--primary); }
+.defect-list { flex:1; overflow-y:auto; padding:0 8px 8px; }
+.defect-list::-webkit-scrollbar { width:4px; }
+.defect-list::-webkit-scrollbar-thumb { background:var(--text-dim); border-radius:2px; }
 
-/* 地图控制按钮 */
-.map-controls {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  display: flex; flex-direction: column; gap: 6px; z-index: 10;
+.defect-item {
+  background:var(--bg-card);border-radius:10px;padding:12px;
+  margin-bottom:8px;border:1px solid var(--border);
+  cursor:pointer;transition:all .2s;
 }
-.map-ctrl-btn {
-  width: 32px; height: 32px; border-radius: 6px; background: white;
-  border: 1px solid var(--border-color); display: flex; align-items: center;
-  justify-content: center; cursor: pointer; font-size: 14px; color: var(--text-secondary);
-  box-shadow: 0 1px 4px rgba(0,0,0,.1); transition: .15s;
+.defect-item:hover { background:var(--bg-card-hover); transform:translateX(-2px); }
+.defect-item.new { border-left:3px solid var(--red); animation:newFlash 1s ease; }
+@keyframes newFlash { 0%{background:rgba(239,68,68,.15)} 100%{background:var(--bg-card)} }
+.di-header { display:flex;align-items:center;gap:8px;margin-bottom:6px; }
+.di-icon {
+  width:28px;height:28px;border-radius:8px;display:flex;
+  align-items:center;justify-content:center;font-size:13px;color:white;
+  flex-shrink:0;
 }
-.map-ctrl-btn:hover { color: var(--primary); border-color: var(--primary); }
+.di-name { font-size:13px;font-weight:600;flex:1; }
+.di-sev { font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700; }
+.sev-critical { background:#fecaca;color:#dc2626; }
+.sev-major   { background:#fef3c7;color:#d97706; }
+.sev-minor    { background:#dbeafe;color:#2563eb; }
+.di-meta { font-size:11px;color:var(--text-muted);margin-bottom:6px; }
+.di-bar { height:4px;background:#1e293b;border-radius:2px;overflow:hidden; }
+.di-bar-fill { height:100%;border-radius:2px;transition:width .5s; }
 
-/* 底部状态栏 */
-.statusbar {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 26px; background: var(--bg-dark); color: var(--text-light);
-  display: flex; align-items: center; padding: 0 16px; font-size: 11px;
-  gap: 20px; z-index: 50;
+/* ===== 中间：视频监控区 ===== */
+.center-area {
+  flex:1;display:flex;flex-direction:column;position:relative;
+  background:linear-gradient(180deg,#080c15 0%,#0d1424 100%);
+  overflow:hidden;
 }
-.statusbar-item { display: flex; align-items: center; gap: 4px; }
-.scale-bar { margin-left: auto; display: flex; align-items: center; gap: 4px; }
-.scale-line { width: 60px; height: 2px; background: var(--text-light); }
 
-/* 响应式隐藏 */
-.hidden { display: none !important; }
+/* 视频容器 */
+.video-container {
+  flex:1;position:relative;display:flex;align-items:center;
+  justify-content:center;overflow:hidden;
+}
+.video-feed {
+  width:100%;height:100%;object-fit:cover;
+  position:relative;background:#000;
+}
+.video-placeholder {
+  width:100%;height:100%;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#0d1525 0%,#162033 50%,#0d1525 100%);
+  overflow:hidden;
+}
 
-/* 动画 */
-@keyframes fadeIn { from{opacity:0} to{opacity:1} }
-@keyframes slideUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
-.animate-in { animation: fadeIn .3s ease; }
+/* 模拟桥梁画面（Canvas） */
+.bridge-canvas { width:100%;height:100%; display:block; }
+
+/* 检测叠加层 */
+.detection-overlay {
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;z-index:10;
+}
+.det-box {
+  position:absolute;border:2px solid;border-radius:4px;
+  transition:all .3s;animation:boxAppear .4s ease;
+}
+@keyframes boxAppear { from{transform:scale(1.2);opacity:0}to{transform:scale(1);opacity:1} }
+.det-label {
+  position:absolute;top:-22px;left:-2px;padding:2px 8px;
+  border-radius:4px;font-size:11px;font-weight:700;color:white;
+  white-space:nowrap;transform:translateY(-100%);
+}
+.det-conf { font-size:10px; opacity:.85; }
+
+/* 视频信息浮层 */
+.video-overlay-ui {
+  position:absolute;top:0;left:0;right:0;padding:12px 16px;
+  display:flex;justify-content:space-between;z-index:20;
+  pointer-events:none;
+}
+.video-overlay-ui > * { pointer-events:auto; }
+.vui-info {
+  background:rgba(0,0,0,.65);backdrop-filter:blur(8px);
+  border-radius:8px;padding:8px 14px;font-size:11px;
+  display:flex;align-items:center;gap:12px;
+}
+.vui-info b { color:var(--cyan); }
+.vui-rec {
+  background:rgba(239,68,68,.8);color:white;
+  padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;
+  display:flex;align-items:center;gap:6px;
+  animation:recBlink 1s infinite;
+}
+@keyframes recBlink { 0%,100%{opacity:1}50%{opacity:.4} }
+.vui-rec .rec-dot { width:8px;height:8px;background:white;border-radius:50%; }
+
+/* 底部控制栏 */
+.video-controls {
+  position:absolute;bottom:0;left:0;right:0;
+  padding:10px 16px;background:linear-gradient(transparent,rgba(0,0,0,.75));
+  display:flex;align-items:center;gap:12px;z-index:20;
+}
+.ctrl-btn {
+  width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.1);
+  border:none;color:white;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:.2s; backdrop-filter:blur(4px);
+}
+.ctrl-btn:hover { background:rgba(255,255,255,.2); }
+.ctrl-btn.active { background:var(--primary); }
+.timeline-bar {
+  flex:1;height:4px;background:rgba(255,255,255,.15);border-radius:2px;
+  position:relative;cursor:pointer;
+}
+.timeline-progress {
+  height:100%;background:linear-gradient(90deg,var(--primary),var(--cyan));
+  border-radius:2px;width:0%;transition:width .3s;
+}
+.time-display { font-size:11px;color:var(--text-muted);font-family:monospace;min-width:110px;text-align:right; }
+
+/* 右侧工具栏 */
+.tool-strip {
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:6px;z-index:25;
+}
+.tool-btn {
+  width:36px;height:36px;border-radius:8px;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.08);
+  color:var(--text-muted);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.2s;
+}
+.tool-btn:hover { background:rgba(59,130,246,.25); color:var(--primary); border-color:var(--primary); }
+
+/* ===== 右侧面板：详情 + 报告 ===== */
+.right-panel {
+  width:340px;background:var(--bg-panel);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;
+}
+.tabs-row {
+  display:flex;border-bottom:1px solid var(--border);
+  padding:0 16px;
+}
+.tab-item {
+  padding:12px 0;margin-right:20px;font-size:13px;
+  color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:.2s;font-weight:500;
+}
+.tab-item.active { color:var(--primary); border-bottom-color:var(--primary); }
+.tab-content { display:none; flex:1; overflow-y:auto; padding:12px 16px; }
+.tab-content.active { display:block; }
+
+/* 详情卡片 */
+.detail-card {
+  background:var(--bg-card);border-radius:12px;
+  border:1px solid var(--border);overflow:hidden;
+}
+.dc-img-area {
+  width:100%;aspect-ratio:16/10;background:#0d1525;
+  position:relative;overflow:hidden;
+}
+.dc-img-area canvas { width:100%;height:100%;object-fit:cover; }
+.dc-body { padding:14px; }
+.dc-title { font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px; }
+.dc-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0; }
+.dc-field { font-size:11px;color:var(--text-muted); }
+.dc-field b { color:var(--text-white); font-size:13px; display:block; margin-top:2px; }
+.dc-solution {
+  margin-top:12px;padding:10px 12px;border-radius:8px;
+  background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);
+  font-size:11px;line-height:1.7;color:#6ee7b7;
+}
+
+/* 报告区 */
+.report-section { margin-top:12px; }
+.r-summary {
+  background:var(--bg-card);border-radius:10px;padding:14px;
+  border:1px solid var(--border);margin-bottom:10px;
+}
+.rs-row { display:flex;justify-content:space-between;padding:4px 0;font-size:12px; }
+.rs-row b { color:var(--cyan); }
+.export-btn {
+  width:100%;padding:10px;border-radius:8px;
+  background:linear-gradient(135deg,var(--primary),var(--purple));
+  color:white;border:none;font-size:13px;font-weight:600;
+  cursor:pointer;transition:.2s;margin-top:8px;
+}
+.export-btn:hover { transform:translateY(-1px); box-shadow:var(--glow-blue); }
+
+/* ===== 告警弹窗 ===== */
+.alert-popup {
+  position:fixed;top:60px;right:20px;width:360px;
+  background:var(--bg-card);border:1px solid rgba(239,68,68,.4);
+  border-radius:12px;z-index:999;overflow:hidden;
+  animation:alertSlideIn .4s ease;box-shadow:0 8px 32px rgba(0,0,0,.5);
+  display:none;
+}
+.alert-popup.show { display:block; }
+@keyframes alertSlideIn { from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1} }
+.alert-header {
+  background:linear-gradient(135deg,rgba(239,68,68,.2),transparent);
+  padding:10px 14px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid rgba(239,68,68,.2);
+}
+.alert-icon { font-size:18px; }
+.alert-title { font-size:13px;font-weight:700;color:var(--red);flex:1; }
+.alert-close { cursor:pointer;color:var(--text-muted);font-size:16px; }
+.alert-body { padding:12px 14px; font-size:12px;line-height:1.7; color:var(--text-muted); }
+.alert-action {
+  margin:0 14px 12px;padding:8px;border-radius:6px;
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+  color:var(--red);font-size:11px;font-weight:600;cursor:pointer;
+  text-align:center;transition:.2s;
+}
+.alert-action:hover { background:rgba(239,68,68,.2); }
+
+/* ===== 底部状态栏 ===== */
+.bottom-bar {
+  height:28px;background:var(--bg-dark);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;
+  font-size:11px;color:var(--text-dim);gap:20px;
+}
+.bb-item { display:flex;align-items:center;gap:4px; }
+.bb-item b { color:var(--cyan); }
+.bb-spacer { flex:1; }
+.bb-signal { display:flex;gap:2px;align-items:flex-end;height:14px; }
+.bb-signal div { width:3px;background:var(--green);border-radius:1px; }
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--text-dim);border-radius:3px; }
+
+/* ===== 动画 ===== */
+@keyframes fadeInUp { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} */
+.animate-in { animation:fadeInUp .4s ease; }
+
+/* 隐藏文件上传input */
+.hidden-input { display:none; }
 </style>
 </head>
 <body>
 
 <!-- ==================== 顶栏 ==================== -->
 <div class="topbar">
-  <div class="topbar-logo">
-    <div class="icon">🌉</div>
-    <div>
-      <div>天 枢 桥 检</div>
-      <div class="topbar-subtitle">桥梁智能巡检与AI定损系统</div>
+  <div class="logo">
+    <div class="logo-icon">🌉</div>
+    <div class="logo-text">
+      <h1>天 枢 桥 检</h1>
+      <span>TIANSHU BRIDGE INSPECTION · AI REAL-TIME MONITORING</span>
     </div>
   </div>
-  <div class="topbar-tabs" id="topTabs">
-    <button class="tab-btn" data-page="overview"><span>📊</span> 数据概览</button>
-    <button class="tab-btn" data-page="route"><span>✈️</span> 飞行任务<span class="tag">×</span></button>
-    <button class="tab-btn active" data-page="schedule"><span>📅</span> 巡检排期<span class="tag">×</span></button>
-    <button class="tab-btn" data-page="ai"><span>🤖</span> AI模型<span class="tag">×</span></button>
-    <button class="tab-btn active" data-page="route"><span>📍</span> 航线管理<span class="tag">×</span></button>
-    <button class="tab-btn" data-page="report"><span>📋</span> 定损报告<span class="tag">×</span></button>
+  <div class="topbar-center">
+    <div class="status-chip live"><div class="dot"></div>LIVE 巡检中</div>
+    <div style="font-size:12px;color:var(--text-muted);">
+      🚁 DJI Matrice 4TD · <b style="color:var(--cyan)">航点 3/7</b> · 平顶山西干渠桥
+    </div>
   </div>
-  <div class="topbar-spacer"></div>
-  <button class="btn-primary">💾 保存配置</button>
+  <div class="topbar-right">
+    <span id="clockDisplay">--:--:--</span>
+    <span style="color:var(--green);">● 在线</span>
+  </div>
 </div>
 
-<!-- ==================== 左侧导航图标栏 ==================== -->
-<div class="sidebar">
-  <div class="nav-icon" title="总览"><span>🕐</span></div>
-  <div class="nav-icon active" title="航线管理"><span>✈️</span><div class="dot"></div></div>
-  <div class="nav-icon" title="AI检测"><span>🔍</span><div class="dot"></div></div>
-  <div class="nav-icon" title="数据统计"><span>📊</span></div>
-  <div class="nav-icon" title="温度监测"><span>🌡️</span></div>
-  <div class="nav-icon" title="设置"><span>⚙️</span></div>
-  <div class="nav-icon" title="历史记录"><span>🕰️</span></div>
-  <div style="flex:1"></div>
-  <div class="nav-icon" title="工具箱"><span>✂️</span></div>
-  <div class="nav-icon" title="时钟"><span>⏱️</span></div>
-  <div class="nav-icon" title="字体"><span>A</span></div>
-</div>
+<!-- ==================== 主布局 ==================== -->
+<div class="main-layout">
 
-<!-- ==================== 主内容区 ==================== -->
-<div class="main-area">
+  <!-- ========== 左侧：统计+缺陷列表 ========== -->
+  <div class="left-panel">
+    <div class="panel-header">
+      <h2>📊 实时检测统计</h2>
+      <span class="panel-badge" id="totalCount">6 处缺陷</span>
+    </div>
 
-  <!-- ============ 页面1：航线管理 ============ -->
-  <div class="page active" id="pageRoute">
-
-    <!-- 左：设置面板 -->
-    <div class="route-left-panel">
-      <!-- 返回 + 标题 -->
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;color:var(--text-secondary);cursor:pointer;">
-        <span>‹</span><span style="font-size:13px;">返回</span>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--red)" id="statCritical">1</div>
+        <div class="stat-label">危急缺陷</div>
+        <div class="stat-trend trend-up">▲ 较上次 +1</div>
       </div>
-
-      <div class="panel-section">
-        <div style="display:flex;gap:8px;margin-bottom:14px;">
-          <button class="toggle-btn active">📍 航点列表</button>
-          <button class="toggle-btn">⚙️ 航线设置</button>
-        </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--orange)" id="statMajor">2</div>
+        <div class="stat-label">严重缺陷</div>
+        <div class="stat-trend trend-down">▼ 较上次 -1</div>
       </div>
-
-      <!-- 全局拍摄设置 -->
-      <div class="panel-section">
-        <div class="panel-title">全局拍摄设置</div>
-        <div class="toggle-group">
-          <button class="toggle-btn active">可见光</button>
-          <button class="toggle-btn" style="color:#e74c3c;border-color:#fecaca;background:#fff5f5;">红外热成像</button>
-        </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--cyan)" id="statMinor">2</div>
+        <div class="stat-label">一般缺陷</div>
+        <div class="stat-trend">— 持平</div>
       </div>
-
-      <!-- 起飞设置 -->
-      <div class="panel-section">
-        <div class="panel-title">起飞设置</div>
-        <div class="toggle-group">
-          <button class="toggle-btn active">垂直爬升</button>
-          <button class="toggle-btn">倾斜爬升</button>
-        </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--green)" id="accuracy">96.8%</div>
+        <div class="stat-label">AI置信度</div>
+        <div class="stat-trend trend-up">↑ YOLOv8m</div>
       </div>
-
-      <!-- 滑块参数 -->
-      <div class="slider-row">
-        <div class="slider-icon">▼</div>
-        <div class="slider-track"><div class="slider-fill" style="width:65%"></div></div>
-        <div class="slider-value">+100</div>
-      </div>
-      <div style="font-size:11px;color:var(--text-secondary);text-align:right;margin-top:-6px;margin-bottom:12px;">垂直爬升飞行轨迹</div>
-
-      <div class="slider-row">
-        <div class="slider-icon"></div>
-        <div class="slider-track"><div class="slider-fill" style="width:35%"></div></div>
-        <div class="slider-value">+10</div>
-      </div>
-
-      <div class="slider-row">
-        <div class="slider-icon" style="font-size:20px;">🚁</div>
-        <div class="slider-track"><div class="slider-fill" style="width:55%"></div></div>
-        <div class="slider-value">85 m</div>
-      </div>
-      <div style="font-size:11px;color:var(--text-secondary);text-align:right;margin-top:-6px;margin-bottom:12px;">安全起飞高度<br>(ALT)</div>
-
-      <div class="slider-row">
-        <div class="slider-icon"></div>
-        <div class="slider-track"><div class="slider-fill" style="width:40%"></div></div>
-        <div class="slider-value">-10</div>
-      </div>
-
-      <div class="slider-row">
-        <div class="slider-icon" style="font-size:20px;">🌿</div>
-        <div class="slider-track"><div class="slider-fill" style="width:62%"></div></div>
-        <div class="slider-value">-100</div>
-      </div>
-      <div style="font-size:11px;color:var(--text-secondary);text-align:right;margin-top:-6px;">渠道堤顶高度</div>
-
-      <!-- 高度模式 -->
-      <div class="panel-section" style="margin-top:16px;">
-        <div class="panel-title">航线高度模式</div>
-        <div class="toggle-group">
-          <button class="toggle-btn">绝对高度</button>
-          <button class="toggle-btn active">相对起⻜点高度</button>
-        </div>
+      <div class="stat-card" style="grid-column:span 2;">
+        <div class="stat-num" style="color:var(--purple);font-size:20px;" id="imgProcessed">186</div>
+        <div class="stat-label">已采集图像 / 推理速度 ~25FPS / 航线完成 43%</div>
       </div>
     </div>
 
-    <!-- 中：地图视图 -->
-    <div class="route-center">
-      <div class="map-container">
-        <!-- 信息栏 -->
-        <div class="map-info-bar animate-in">
-          <h3>🌉 平顶山西干渠桥 · 主线巡检</h3>
-          <div class="meta">架次: Matrice 4TD · 模式: 定损全扫</div>
-          <div class="meta" style="margin-left:12px;">
-            <strong>航点数量 7个</strong> &nbsp;
-            <strong>航线长度 892.6m</strong> &nbsp;
-            <strong>预计执行时长 约8分32秒</strong> &nbsp;
-            <strong>预估照片数 ~186张</strong>
+    <div class="section-title">🔍 缺陷列表（实时更新）</div>
+    <div class="defect-list" id="defectList">
+      <!-- 由JS动态渲染 -->
+    </div>
+
+    <div style="padding:10px 16px;border-top:1px solid var(--border);">
+      <button class="export-btn" onclick="triggerAlert()">🔔 模拟新缺陷告警</button>
+    </div>
+  </div>
+
+  <!-- ========== 中间：视频监控 ========== -->
+  <div class="center-area">
+    <div class="video-container">
+      <!-- 模拟视频画面 -->
+      <div class="video-placeholder" id="videoArea">
+        <canvas id="bridgeCanvas" class="bridge-canvas"></canvas>
+
+        <!-- AI检测叠加层 -->
+        <div class="detection-overlay" id="detOverlay"></div>
+
+        <!-- 视频信息UI -->
+        <div class="video-overlay-ui">
+          <div class="vui-info">
+            <span>📍 <b>113.2856°E 33.7614°N</b></span>
+            <span>📏 ALT <b>96.3m</b></span>
+            <span>🧭 <b>085°</b></span>
+            <span>⚡ <b>8.0 m/s</b></span>
+            <span>🌡️ <b>26.3°C</b></span>
+          </div>
+          <div class="vui-rec"><div class="rec-dot"></div>REC</div>
+        </div>
+
+        <!-- 右侧工具 -->
+        <div class="tool-strip">
+          <div class="tool-btn" title="全屏" onclick="toggleFullscreen()">⛶</div>
+          <div class="tool-btn" title="截图" onclick="captureFrame()">📷</div>
+          <div class="tool-btn" title="红外热成像" id="btnThermal" onclick="toggleThermal(this)">🌡️</div>
+          <div class="tool-btn" title="可见光" id="btnVisible" onclick="toggleVisible(this)" class="active">👁️</div>
+          <div class="tool-btn" title="放大">🔍+</div>
+          <div class="tool-btn" title="缩小">🔍-</div>
+        </div>
+
+        <!-- 底部控制栏 -->
+        <div class="video-controls">
+          <div class="ctrl-btn" id="playBtn" onclick="togglePlay()">⏸</div>
+          <div class="ctrl-btn">⏭</div>
+          <div class="timeline-bar" id="timelineBar">
+            <div class="timeline-progress" id="timelineProgress"></div>
+          </div>
+          <div class="time-display"><span id="curTime">00:00:00</span> / <span id="totTime">00:08:32</span></div>
+          <div class="ctrl-btn">🔊</div>
+          <label class="ctrl-btn" for="uploadInput" title="上传图片检测" style="font-size:16px;">📤</label>
+          <input type="file" id="uploadInput" class="hidden-input" accept="image/*" onchange="handleUpload(event)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 右侧：详情+报告 ========== -->
+  <div class="right-panel">
+    <div class="tabs-row">
+      <div class="tab-item active" data-tab="tabDetail" onclick="switchTab(this)">缺陷详情</div>
+      <div class="tab-item" data-tab="tabReport" onclick="switchTab(this)">定损报告</div>
+    </div>
+
+    <!-- 缺陷详情Tab -->
+    <div class="tab-content active" id="tabDetail">
+      <div class="detail-card animate-in" id="detailCard">
+        <div class="dc-img-area">
+          <canvas id="detailCanvas" width="308" height="192"></canvas>
+        </div>
+        <div class="dc-body" id="detailBody">
+          <!-- 由JS动态渲染 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 定损报告Tab -->
+    <div class="tab-content" id="tabReport">
+      <div class="report-section">
+        <div class="r-summary animate-in">
+          <div style="font-size:15px;font-weight:700;margin-bottom:10px;">📋 巡检报告摘要</div>
+          <div class="rs-row"><span>巡检日期</span><b>2026-05-13 13:42:18</b></div>
+          <div class="rs-row"><span>目标桥梁</span><b>平顶山西干渠桥 (1961)</b></div>
+          <div class="rs-row"><span>无人机型号</span><b>DJI Matrice 4TD</b></div>
+          <div class="rs-row"><span>采集图像</span><b>186 张</b></div>
+          <div class="rs-row"><span>检测模型</span><b>YOLOv8m-BridgeDamage</b></div>
+          <div class="rs-row"><span>平均置信度</span><b style="color:var(--green)">94.2%</b></div>
+          <div class="rs-row"><span>发现缺陷</span><b style="color:var(--red)">6 处</b></div>
+          <div class="rs-row"><span>综合评级</span><b style="color:var(--orange)">B级（需关注）</b></div>
+        </div>
+
+        <div class="r-summary animate-in" style="animation-delay:.1s">
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px;">⚠️ 危急缺陷清单</div>
+          <div style="font-size:12px;line-height:2;color:var(--text-muted);">
+            <div>P<span style="float:right;color:var(--red)">0 · 结构性裂缝 1处</span></div>
+            <div>P<span style="float:right;color:var(--orange)">1 · 钢筋外露锈蚀 1处</span></div>
+            <div>P<span style="float:right;color:var(--orange)">1 · 混凝土剥落 1处</span></div>
+            <div>P<span style="float:right;color:var(--cyan)">2 · 螺栓缺失 1处</span></div>
+            <div>P<span style="float:right;color:var(--cyan)">2 · 涂层脱落 1处</span></div>
+            <div>P<span style="float:right;color:var(--text-dim)">3 · 水渍 1处</span></div>
           </div>
         </div>
 
-        <!-- 航线 SVG -->
-        <svg class="flight-path-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
-          <!-- 虚线路径 -->
-          <path d="M120,420 Q200,350 320,280 Q450,200 550,220 Q650,240 700,180"
-                fill="none" stroke="#27ae60" stroke-width="2" stroke-dasharray="8,6" opacity=".7"/>
-          <!-- 箭头 -->
-          <polygon points="700,180 688,188 692,172" fill="#27ae70"/>
-
-          <!-- 扫描扇形区域 -->
-          <path d="M320,280 L270,190 A80,80 0 0,1 370,195 Z" fill="rgba(39,174,96,.12)" stroke="rgba(39,174,96,.3)" stroke-width="1"/>
-          <path d="M550,220 L500,130 A80,80 0 0,1 600,135 Z" fill="rgba(39,174,96,.12)" stroke="rgba(39,174,96,.3)" stroke-width="1"/>
-          <path d="M180,370 L130,290 A75,75 0 0,1 225,288 Z" fill="rgba(39,174,96,.12)" stroke="rgba(39,174,96,.3)" stroke-width="1"/>
-          <path d="M660,250 L610,170 A75,75 0 0,1 705,172 Z" fill="rgba(39,174,96,.12)" stroke="rgba(39,174,96,.3)" stroke-width="1"/>
-        </svg>
-
-        <!-- 桥梁示意图 -->
-        <svg class="bridge-svg-layer" viewBox="0 0 600 120">
-          <!-- 桥面 -->
-          <rect x="20" y="30" width="560" height="22" rx="3" fill="#6b7b8c" opacity=".85"/>
-          <!-- 桥墩 -->
-          <rect x="80" y="52" width="30" height="58" rx="2" fill="#7f8c8d" opacity=".7"/>
-          <rect x="260" y="52" width="30" height="58" rx="2" fill="#7f8c8d" opacity=".7"/>
-          <rect x="440" y="52" width="30" height="58" rx="2" fill="#7f8c8d" opacity=".7"/>
-          <!-- 车道线 -->
-          <line x1="170" y1="41" x2="210" y2="41" stroke="white" stroke-width="2" stroke-dasharray="10,8" opacity=".6"/>
-          <line x1="260" y1="41" x2="300" y2="41" stroke="white" stroke-width="2" stroke-dasharray="10,8" opacity=".6"/>
-          <line x1="350" y1="41" x2="390" y2="41" stroke="white" stroke-width="2" stroke-dasharray="10,8" opacity=".6"/>
-          <line x1="440" y1="41" x2="480" y2="41" stroke="white" stroke-width="2" stroke-dasharray="10,8" opacity=".6"/>
-          <!-- 标注 -->
-          <text x="310" y="18" text-anchor="middle" fill="white" font-size="11" opacity=".7">桥面终点</text>
-          <text x="310" y="125" text-anchor="middle" fill="white" font-size="11" opacity=".7">桥面起点</text>
-        </svg>
-
-        <!-- 航点标记 -->
-        <div class="waypoint-marker wp-done" style="left:140px;top:365px;" title="航点1">
-          <div class="wp-label">桥面起点</div> 1
-        </div>
-        <div class="waypoint-marker wp-done" style="left:260px;top:295px;" title="航点2">
-          <div class="wp-label">主跨左支座</div> 2
-        </div>
-        <div class="waypoint-marker wp-active" style="left:385px;top:230px;" title="航点3 当前">
-          <div class="wp-label">主跨右支座</div> 3
-        </div>
-        <div class="waypoint-marker wp-pending" style="left:520px;top:205px;" title="航点4">
-          4
-        </div>
-        <div class="waypoint-marker wp-pending" style="left:620px;top:165px;" title="航点5">
-          <div class="wp-label">主跨右支座</div> 5
+        <div class="r-summary animate-in" style="animation-delay:.2s">
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px;">💡 建议措施</div>
+          <ol style="font-size:12px;line-height:2;color:var(--text-muted);padding-left:18px;">
+            <li>对<b style="color:var(--white)">结构性裂缝</b>区域立即限载，封闭受损车道</li>
+            <li>一周内采用<b style="color:var(--white)">低压注浆+碳纤维布加固</b></li>
+            <li>钢筋外露部位<b style="color:var(--white)">喷砂除锈至Sa2.5级</b>后修补</li>
+            <li>螺栓缺失同型号更换并纳入月度巡检重点</li>
+          </ol>
         </div>
 
-        <!-- 标签 -->
-        <div style="position:absolute;left:530px;top:245px;background:#27ae60;color:white;font-size:10px;padding:3px 8px;border-radius:4px;">桥面终点</div>
-        <div style="position:absolute;left:430px;top:400px;background:#27ae60;color:white;font-size:10px;padding:3px 8px;border-radius:4px;">桥面起点</div>
-
-        <!-- 地图控件 -->
-        <div class="map-controls">
-          <div class="map-ctrl-btn">➕</div>
-          <div class="map-ctrl-btn">➖</div>
-          <div class="map-ctrl-btn">🧭</div>
-          <div class="map-ctrl-btn">📦</div>
-          <div class="map-ctrl-btn">📷</div>
-          <div class="map-ctrl-btn">⚙️</div>
-          <div class="map-ctrl-btn">⋯</div>
-        </div>
-
-        <!-- 底部航点信息 -->
-        <div class="waypoint-info-bar">
-          <div class="wp-dot"></div>
-          <div class="wp-name">航点3 ✓</div>
-          <div class="info-item">经纬度 <strong>113.285642°E, 33.761358°N</strong> 🎯</div>
-          <div class="info-item">海拔高度 <strong>96.3m ⬇️</strong></div>
-          <div class="info-item">相对机场高度 <strong>85.0m ⬇️</strong></div>
-          <div class="info-item">航点速度 <strong>8.0m/s ⚡</strong></div>
-          <div class="info-item">偏航角模式 <strong>沿航线方向 🧭</strong></div>
-          <label style="font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" checked style="cursor:pointer;"> 是否危险点</label>
-        </div>
+        <button class="export-btn" onclick="exportReport()">📥 导出完整PDF报告</button>
+        <button class="export-btn" style="background:linear-gradient(135deg,var(--green),var(--cyan));" onclick="window.print()">🖨️ 打印报告</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- 右：AI检测结果 -->
-    <div class="route-right-panel">
-      <div class="ai-header">
-        <h3>🔍 AI智能定损结果</h3>
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px;opacity:.8;">
-          YOLOv8-BridgeDamage · LLM决策引擎
-        </div>
-        <span class="badge-danger">⚠️ 6处异常</span>
-      </div>
-
-      <!-- 缺陷卡片1 -->
-      <div class="defect-card">
-        <div class="defect-card-header">
-          <div class="defect-icon icon-crack">🔴</div>
-          <span class="defect-name">结构性裂缝</span>
-          <span class="severity-tag sev-critical">危急</span>
-        </div>
-        <div class="defect-location">📍 航点4 主跨跨中 · 桥面板底部</div>
-        <div class="defect-metrics">
-          <span>长度 <b>1.82m</b></span>
-          <span>宽度 <b>3.5mm</b></span>
-          <span>深度 <b>45mm</b></span>
-          <span>走向 <b>横向</b></span>
-        </div>
-        <div class="confidence-bar">
-          <div class="confidence-label"><span>置信度</span><span style="color:#27ae60;font-weight:600;">96.8%</span></div>
-          <div class="confidence-track"><div class="confidence-fill" style="width:96.8%;background:linear-gradient(90deg,#27ae60,#2ecc71);"></div></div>
-        </div>
-        <div class="solution-box">
-          📋 <b>处置方案（优先级 P0）</b><br>
-          ⚠️ 立即限载通行 → 封闭受损车道 → 采用低压注浆+碳纤维布加固 → 建议一周内完成专项检测
-        </div>
-      </div>
-
-      <!-- 缺陷卡片2 -->
-      <div class="defect-card">
-        <div class="defect-card-header">
-          <div class="defect-icon icon-expose">🔵</div>
-          <span class="defect-name">钢筋外露 & 锈蚀</span>
-          <span class="severity-tag sev-major">严重</span>
-        </div>
-        <div class="defect-location">📍 航点3 主跨左支座 · T梁腹板</div>
-        <div class="defect-metrics">
-          <span>暴露面积 <b>0.12m²</b></span>
-          <span>锈蚀等级 <b>C3</b></span>
-          <span>钢筋直径 <b>Φ25</b></span>
-        </div>
-        <div class="confidence-bar">
-          <div class="confidence-label"><span>置信度</span><span style="color:#27ae60;font-weight:600;">93.2%</span></div>
-          <div class="confidence-track"><div class="confidence-fill" style="width:93.2%;background:linear-gradient(90deg,#3498db,#5dade2);"></div></div>
-        </div>
-        <div class="solution-box">
-          📋 <b>处置方案（优先级 P1）</b><br>
-          清除松散混凝土→喷砂除锈至Sa2.5级→涂刷阻锈剂→聚合物砂浆修补→15日内复查
-        </div>
-      </div>
-
-      <!-- 缺陷卡片3 -->
-      <div class="defect-card">
-        <div class="defect-card-header">
-          <div class="defect-icon icon-spall">🟠</div>
-          <span class="defect-name">混凝土剥落</span>
-          <span class="severity-tag sev-major">严重</span>
-        </div>
-        <div class="defect-location">📍 航点5 主跨右支座 · 墩顶区域</div>
-        <div class="defect-metrics">
-          <span>面积 <b>0.35m²</b></span>
-          <span>深度 <b>28mm</b></span>
-          <span>骨料暴露 <b>是</b></span>
-          <span>置信度 <b>89.5%</b></span>
-        </div>
-        <div class="solution-box">
-          📋 <b>处置方案（优先级 P1）</b><br>
-          凿除松动区→界面处理→C40高强修补砂浆修复→表面涂刷防水涂层
-        </div>
-      </div>
-
-      <!-- 缺陷卡片4 -->
-      <div class="defect-card">
-        <div class="defect-card-header">
-          <div class="defect-icon icon-bolt">🟢</div>
-          <span class="defect-name">高强螺栓缺失</span>
-          <span class="severity-tag sev-minor">一般</span>
-        </div>
-        <div class="defect-location">📍 航点2 桥面起点·伸缩缝处</div>
-        <div class="defect-metrics">
-          <span>缺失数量 <b>3颗</b></span>
-          <span>螺栓规格 <b>M22×80</b></span>
-          <span>置信度 <b>97.1%</b></span>
-        </div>
-        <div class="solution-box">
-          📋 <b>处置方案（优先级 P2）</b><br>
-          同型号高强螺栓更换→扭矩校核至设计值(280N·m)→标记并纳入月度巡检重点
-        </div>
-      </div>
-
-      <!-- 统计底栏 -->
-      <div class="stats-footer">
-        <div class="stat-item"><div class="stat-num" style="color:#e74c3c;">1</div><div class="stat-label">危急</div></div>
-        <div class="stat-item"><div class="stat-num" style="color:#f39c12;">2</div><div class="stat-label">严重</div></div>
-        <div class="stat-item"><div class="stat-num" style="color:#3498db;">2</div><div class="stat-label">一般</div></div>
-        <div class="stat-item"><div class="stat-num" style="color:#95a5a6;">1</div><div class="stat-label">观察</div></div>
-        <div class="stat-item"><div class="stat-num" style="color:#27ae60;">✅</div><div class="stat-label">方案已生成</div></div>
-      </div>
-    </div>
-  </div><!-- /pageRoute -->
-
-  <!-- ============ 页面2：巡检排期 ============ -->
-  <div class="page" id="pageSchedule">
-
-    <!-- 左：筛选面板 -->
-    <div class="schedule-left-panel">
-      <h2 style="font-size:17px;font-weight:700;margin-bottom:16px;">排期管理</h2>
-
-      <div class="filter-group">
-        <div class="filter-label">📂 巡检类型</div>
-        <div class="filter-option active"><span>● 全部任务</span><span class="filter-count">28</span></div>
-        <div class="filter-option"><span>● 日常巡检</span><span class="filter-count">12</span></div>
-        <div class="filter-option"><span>● 月度复查</span><span class="filter-count">8</span></div>
-        <div class="filter-option"><span>● 专项检测</span><span class="filter-count">5</span></div>
-        <div class="filter-option"><span>● 应急排查</span><span class="filter-count">3</span></div>
-      </div>
-
-      <div class="filter-group">
-        <div class="filter-label">🔄 执行状态</div>
-        <div class="status-chip-group">
-          <div class="status-chip active">全部</div>
-          <div class="status-chip">待执行</div>
-          <div class="status-chip">执行中</div>
-          <div class="status-chip">已完成</div>
-          <div class="status-chip">已取消</div>
-        </div>
-      </div>
-
-      <div class="filter-group">
-        <div class="filter-label">🌉 目标桥梁</div>
-        <div class="filter-option active"><span>全部桥梁</span><span class="filter-count">5座</span></div>
-        <div class="filter-option"><span>西干渠桥</span><span class="filter-count">10</span></div>
-        <div class="filter-option"><span>湛河大桥</span><span class="filter-count">8</span></div>
-        <div class="filter-option"><span>沙河特大桥</span><span class="filter-count">6</span></div>
-      </div>
-
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-color);">
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:var(--text-secondary);">本月计划</span><strong>28 架次</strong></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-secondary);">已完成</span><strong style="color:var(--accent-green);">19 架次</strong></div>
-      </div>
-    </div>
-
-    <!-- 中：日历视图 -->
-    <div class="schedule-center">
-      <div class="calendar-toolbar">
-        <div class="calendar-nav">
-          <button>◀</button>
-          <div class="calendar-title">2026年 4月</div>
-          <button>▶</button>
-        </div>
-        <div class="view-tabs">
-          <button class="view-tab active">📅 日历视图</button>
-          <button class="view-tab">📋 列表视图</button>
-          <button class="view-tab">📊 统计视图</button>
-        </div>
-        <div class="toolbar-actions">
-          <button class="action-btn-sm">📥 导入排期</button>
-          <button class="action-btn-sm">📤 导出报表</button>
-          <button class="action-btn-sm primary">＋ 新增巡检</button>
-        </div>
-      </div>
-
-      <div class="calendar-grid">
-        <!-- 星期头 -->
-        <div class="cal-header-cell">星期一</div>
-        <div class="cal-header-cell">星期二</div>
-        <div class="cal-header-cell">星期三</div>
-        <div class="cal-header-cell">星期四</div>
-        <div class="cal-header-cell">星期五</div>
-        <div class="cal-header-cell">星期六</div>
-        <div class="cal-header-cell">星期日</div>
-
-        <!-- Week 1: 30(3月)-5 -->
-        <div class="cal-day other-month"><div class="day-num">30</div><div class="task-pill pill-green" style="font-size:9px;">西千渠·月度检查✓</div></div>
-        <div class="cal-day other-month"><div class="day-num">31</div></div>
-        <div class="cal-day"><div class="day-num">1</div><div class="task-pill pill-blue">西千渠·日常巡检</div></div>
-        <div class="cal-day"><div class="day-num">2</div><div class="task-pill pill-purple">湛河桥·应急排查</div></div>
-        <div class="cal-day"><div class="day-num">3</div><div class="task-pill pill-green">沙河桥·日常巡检 ✓</div></div>
-        <div class="cal-day"><div class="day-num">4</div><div class="task-pill pill-orange">西千渠·专项检测</div></div>
-        <div class="cal-day"><div class="day-num">5</div></div>
-
-        <!-- Week 2: 6-12 -->
-        <div class="cal-day"><div class="day-num">6</div><div class="task-pill pill-blue">西千渠·日常巡检</div></div>
-        <div class="cal-day"><div class="day-num">7</div><div class="task-pill pill-red">湛河桥·紧急检测 🔥</div></div>
-        <div class="cal-day"><div class="day-num">8</div><div class="task-pill pill-green">湛河·月度复查 ✓</div></div>
-        <div class="cal-day"><div class="day-num">9</div><div class="task-pill pill-blue">西千渠·日常巡检</div></div>
-        <div class="cal-day"><div class="day-num">10</div><div class="task-pill pill-green">沙河桥·日常巡检 ✓</div></div>
-        <div class="cal-day"><div class="day-num">11</div><div class="task-pill pill-orange">西千渠·专项检测</div></div>
-        <div class="cal-day"><div class="day-num">12</div><div class="task-pill pill-purple">白鹭洲桥·日常</div></div>
-
-        <!-- Week 3: 13-19 -->
-        <div class="cal-day"><div class="day-num">13</div><div class="task-pill pill-blue">西千渠·日常巡检</div></div>
-        <div class="cal-day"><div class="day-num">14</div><div class="task-pill pill-green">西千渠·日常巡检 ✓</div></div>
-        <div class="cal-day"><div class="day-num">15</div><div class="task-pill pill-orange">沙河桥·月度复查</div></div>
-        <div class="cal-day"><div class="day-num">16</div></div>
-        <div class="cal-day today"><div class="day-num">17</div><div class="task-pill pill-blue">西千渠·主线巡检</div><div class="task-pill pill-green">日常巡检 ✓</div></div>
-        <div class="cal-day"><div class="day-num">18</div><div class="task-pill pill-blue">西千渠·定损全扫</div><div style="font-size:9px;color:#888;text-align:center;">＋查看详情→</div></div>
-        <div class="cal-day"><div class="day-num">19</div><div class="task-pill pill-purple">白鹭洲桥·日常</div></div>
-
-        <!-- Week 4: 20-26 -->
-        <div class="cal-day"><div class="day-num">20</div></div>
-        <div class="cal-day"><div class="day-num">21</div><div class="task-pill pill-blue">西千渠·日常巡检</div></div>
-        <div class="cal-day"><div class="day-num">22</div><div class="task-pill pill-orange">湛河桥·季度详查</div></div>
-        <div class="cal-day"><div class="day-num">23</div></div>
-        <div class="cal-day"><div class="day-num">24</div><div class="task-pill pill-green">沙河桥·日常巡检 ✓</div></div>
-        <div class="cal-day"><div class="day-num">25</div><div class="task-pill pill-blue">西千渠·日常巡检</div></div>
-        <div class="cal-day"><div class="day-num">26</div><div class="task-pill pill-purple">应急紧急命令</div></div>
-
-        <!-- Week 5: 27-30 -->
-        <div class="cal-day"><div class="day-num">27</div><div class="task-pill pill-orange">西千渠·月末总结</div></div>
-        <div class="cal-day"><div class="day-num">28</div></div>
-        <div class="cal-day"><div class="day-num">29</div><div class="task-pill pill-blue">西千渠·日常巡检</div></div>
-        <div class="cal-day"><div class="day-num">30</div><div class="task-pill pill-green">沙河桥·日常巡检 ✓</div></div>
-        <div class="cal-day other-month"><div class="day-num">1</div><div class="task-pill pill-purple">五一假期停飞</div></div>
-        <div class="cal-day other-month"><div class="day-num">2</div></div>
-        <div class="cal-day other-month"><div class="day-num">3</div></div>
-      </div>
-    </div>
-
-    <!-- 右：当日详情 -->
-    <div class="schedule-right-panel">
-      <div class="detail-header">
-        <div class="detail-date-row">
-          <div><div class="detail-date">4月18日</div><div class="detail-weekday">星期六</div></div>
-          <div class="detail-badge">今日 2 项</div>
-        </div>
-        <div class="detail-summary">
-          <span class="summary-stat" style="color:#27ae60;">✅ 已完成 1</span>
-          <span class="summary-stat" style="color:#3498db;">🔄 进行中 1</span>
-          <span class="summary-stat" style="color:#e74c3c;">🔴 西干渠桥</span>
-        </div>
-      </div>
-
-      <div class="section-title">— 任务列表 —</div>
-
-      <!-- 任务卡片1 -->
-      <div class="task-detail-card">
-        <div class="tdc-header">
-          <div class="tdc-title">西千渠·主线巡检</div>
-          <div class="tdc-time">07:30 - 08:12</div>
-        </div>
-        <div class="tdc-subtitle">
-          <span class="tag-mini tag-success">已完成</span>
-          <span class="tag-mini">平顶山西千渠桥</span>
-        </div>
-        <div class="tdc-subtitle">
-          <span>📸 186张</span>
-          <span>📏 RTK±2cm</span>
-          <span>✅ 无异常</span>
-        </div>
-      </div>
-
-      <!-- 任务卡片2 -->
-      <div class="task-detail-card" style="border-color:#4361ee;border-left:3px solid #4361ee;">
-        <div class="tdc-header">
-          <div class="tdc-title">西千渠·AI定损全扫</div>
-          <div class="tdc-time">14:00 - 进行中...</div>
-        </div>
-        <div class="tdc-subtitle">
-          <span class="tag-mini" style="background:#dbeafe;color:#2563eb;">执行中 ●</span>
-          <span class="tag-mini">平顶山西千渠桥</span>
-        </div>
-        <div class="tdc-subtitle">
-          <span>🛫 航点 3/7</span>
-          <span>📸 已采集 78张</span>
-          <span class="tag-mini tag-danger">🔴 发现1处异常</span>
-        </div>
-        <div class="progress-mini"><div class="progress-mini-fill" style="width:43%"></div></div>
-        <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">进度 43% · 预计剩余 5分12秒</div>
-      </div>
-
-      <div class="section-title">— 即将执行 —</div>
-
-      <div class="task-detail-card" style="opacity:.7;">
-        <div class="tdc-header">
-          <div class="tdc-title">白鹭洲桥·日常巡检</div>
-          <div class="tdc-time">明日 09:00</div>
-        </div>
-        <div class="tdc-subtitle">
-          <span class="tag-mini" style="background:#fef3c7;color:#d97706;">待执行</span>
-          <span class="tag-mini">白鹭洲大桥</span>
-        </div>
-        <div class="tdc-subtitle">
-          <span>🛫 5航点</span>
-          <span>📏 420m</span>
-          <span>预计6分钟</span>
-        </div>
-      </div>
-
-      <div style="padding:20px 16px;text-align:center;">
-        <button class="btn-primary" style="width:100%;justify-content:center;padding:10px;">📤 导出报表</button>
-      </div>
-    </div>
-  </div><!-- /pageSchedule -->
-
-</div><!-- /main-area -->
+<!-- ==================== 告警弹窗 ==================== -->
+<div class="alert-popup" id="alertPopup">
+  <div class="alert-header">
+    <span class="alert-icon">🚨</span>
+    <span class="alert-title">AI检测到新的危急缺陷！</span>
+    <span class="alert-close" onclick="closeAlert()">✕</span>
+  </div>
+  <div class="alert-body" id="alertBody">
+    <!-- JS动态填充 -->
+  </div>
+  <div class="alert-action" onclick="closeAlert()">查看详情 →</div>
+</div>
 
 <!-- ==================== 底部状态栏 ==================== -->
-<div class="statusbar">
-  <div class="statusbar-item">🌐 WGS84</div>
-  <div class="statusbar-item">ALT <strong style="color:white;">96.28m</strong></div>
-  <div class="statusbar-item">📍 <strong style="color:white;">113.28734156°E</strong> <strong style="color:white;">33.75987642°N</strong></div>
-  <div class="scale-bar"><div class="scale-line"></div> 50米</div>
-  <div style="margin-left:auto;width:24px;height:24px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">👤</div>
+<div class="bottom-bar">
+  <div class="bb-item">🌐 WGS84</div>
+  <div class="bb-item">延迟 <b>128ms</b></div>
+  <div class="bb-item">带宽 <b>12.4 Mbps</b></div>
+  <div class="bb-item">丢包率 <b>0.02%</b></div>
+  <div class="bb-spacer"></div>
+  <div class="bb-signal">
+    <div style="height:4px"></div><div style="height:7px"></div>
+    <div style="height:10px"></div><div style="height:13px"></div>
+  </div>
+  <div class="bb-item">Jetson Orin NX <b style="color:var(--green)">● 正常</b></div>
+  <div class="bb-item">YOLOv8m <b style="color:var(--cyan)">运行中</b></div>
+  <div class="bb-item">v2.1.0</div>
 </div>
 
 <script>
-// ===== 页面切换逻辑 =====
-const navIcons = document.querySelectorAll('.nav-icon');
-const pages = document.querySelectorAll('.page');
+// ============ 缺陷数据 ============
+const DEFECTS = [
+  { id:1, type:'crack', icon:'🔴', name:'结构性裂缝', sev:'critical', sevText:'危急',
+    location:'航点4 主跨跨中·桥面板底部', conf:96.8,
+    metrics:{len:'1.82m',wid:'3.5mm',dep:'45mm',dir:'横向'},
+    solution:'立即限载通行→封闭受损车道→低压注浆+碳纤维布加固→建议一周内完成专项检测',
+    color:'#ef4444' },
+  { id:2, type:'expose', icon:'🔵', name:'钢筋外露&锈蚀', sev:'major', sevText:'严重',
+    location:'航点3 主跨左支座·T梁腹板', conf:93.2,
+    metrics:{area:'0.12m²',rustLevel:'C3',rebar:'Φ25'},
+    solution:'清除松散混凝土→喷砂除锈至Sa2.5级→涂刷阻锈剂→聚合物砂浆修补→15日内复查',
+    color:'#3b82f6' },
+  { id:3, type:'spall', icon:'🟠', name:'混凝土剥落', sev:'major', sevText:'严重',
+    location:'航点5 主跨右支座·墩顶区域', conf:89.5,
+    metrics:{area:'0.35m²',depth:'28mm',aggregate:'是'},
+    solution:'凿除松动区→界面处理→C40高强修补砂浆修复→表面涂刷防水涂层',
+    color:'#f59e0b' },
+  { id:4, type:'bolt', icon:'🟢', name:'高强螺栓缺失', sev:'minor', sevText:'一般',
+    location:'航点2 桥面起点·伸缩缝处', conf:97.1,
+    metrics:{count:'3颗',spec:'M22×80'},
+    solution:'同型号高强螺栓更换→扭矩校核至设计值(280N·m)→标记并纳入月度巡检重点',
+    color:'#10b981' },
+  { id:5, type:'coating', icon:'🟣', name:'涂层脱落', sev:'minor', sevText:'一般',
+    location:'航点6 栏杆立柱根部', conf:85.3,
+    metrics:{area:'0.08m²',type:'环氧富锌漆'},
+    solution:'表面打磨St3级→重涂环氧富锌漆→厚度≥80μm',
+    color:'#8b5cf6' },
+  { id:6, type:'water', icon:'⚪', name:'水渍渗漏', sev:'minor', sevText:'观察',
+    location:'航点1 桥台翼墙接缝', conf:78.6,
+    metrics:{area:'0.45m²',source:'疑似排水孔堵塞'},
+    solution:'清理疏通排水孔→观察后续发展→若扩大则需注浆止水',
+    color:'#94a3b8' },
+];
 
-// 点击左侧导航切换页面
-navIcons.forEach((icon, idx) => {
-  icon.addEventListener('click', () => {
-    navIcons.forEach(i => i.classList.remove('active'));
-    icon.classList.add('active');
-    // 简单映射：索引0->总览, 1->航线管理, 2->巡检排期
-    if (idx === 0 || idx === 3 || idx === 4 || idx === 5 || idx === 6 || idx === 8 || idx === 9 || idx === 10) {
-      // 保持当前或默认
-    } else if (idx === 1) {
-      showPage('pageRoute');
-    } else if (idx === 2) {
-      showPage('pageSchedule');
-    }
-  });
-});
+let selectedDefect = DEFECTS[0];
+let isPlaying = true;
+let thermalMode = false;
+let frameTime = 0;
+let alertCount = 0;
 
-function showPage(id) {
-  pages.forEach(p => p.classList.remove('active'));
-  document.getElementById(id)?.classList.add('active');
+// ============ 渲染缺陷列表 ============
+function renderDefectList() {
+  const el = document.getElementById('defectList');
+  el.innerHTML = DEFECTS.map((d,i) => `
+    <div class="defect-item ${i===DEFECTS.length-1?'new':''}" onclick="selectDefect(${i})">
+      <div class="di-header">
+        <div class="di-icon" style="background:${d.color}">${d.icon}</div>
+        <span class="di-name">${d.name}</span>
+        <span class="di-sev sev-${d.sev}">${d.sevText}</span>
+      </div>
+      <div class="di-meta">📍 ${d.location}</div>
+      <div class="di-bar"><div class="di-bar-fill" style="width:${d.conf}%;background:linear-gradient(90deg,${d.color},${d.color}88)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--text-dim);">
+        <span>置信度 ${d.conf}%</span>
+        <span>${new Date().toLocaleTimeString().slice(0,8)} 检出</span>
+      </div>
+    </div>
+  `).join('');
+}
+renderDefectList();
+
+// ============ 选择缺陷 ============
+function selectDefect(idx) {
+  selectedDefect = DEFECTS[idx];
+  document.querySelectorAll('.defect-item').forEach((el,i)=>{el.style.borderColor=i===idx?selectedDefect.color:''});
+  renderDetail();
+  drawDetectionBoxes();
 }
 
-// 顶栏Tab点击也切换
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const page = btn.dataset.page;
-    if (page === 'route') showPage('pageRoute');
-    else if (page === 'schedule') showPage('pageSchedule');
-    // 更新active tab
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
+function renderDetail() {
+  const d = selectedDefect;
+  const mKeys = Object.keys(d.metrics);
+  document.getElementById('detailBody').innerHTML = `
+    <div class="dc-title"><span style="background:${d.color};width:10px;height:10px;border-radius:50%;display:inline-block;"></span> ${d.name}
+      <span class="di-sev sev-${d.sev}">${d.sevText}</span>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">📍 ${d.location}</div>
+    <div class="dc-grid">
+      ${mKeys.map(k=>`<div class="dc-field">${k==='len'?'长度':k==='wid'?'宽度':k==='dep'?'深度':k==='dir'?'走向':k==='area'?'面积':k==='rustLevel'?'锈蚀等级':k==='rebar'?'钢筋直径':k==='count'?'缺失数量':k==='spec'?'螺栓规格':k==='type'?'涂层类型':k==='source'?'水渍来源':k}<b>${d.metrics[k]}</b></div>`).join('')}
+    </div>
+    <div style="margin:10px 0;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>AI置信度</span><b style="color:${d.color}">${d.conf}%</b></div>
+      <div class="di-bar" style="height:6px"><div class="di-bar-fill" style="width:${d.conf}%;background:linear-gradient(90deg,${d.color},${d.color}88)"></div></div>
+    </div>
+    <div class="dc-solution">📋 <b>处置方案（优先级 P${d.sev==='critical'?'0':d.sev==='major'?'1':'2'}）</b><br>${d.solution}</div>
+  `;
+  // 绘制详情图
+  drawDetailCanvas();
+}
 
-// ===== Toggle按钮交互 =====
-document.querySelectorAll('.toggle-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const siblings = btn.parentElement.querySelectorAll('.toggle-btn');
-    siblings.forEach(s => s.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
+// ============ Tab切换 ============
+function switchTab(el) {
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(el.dataset.tab).classList.add('active');
+}
 
-// ===== 筛选选项交互 =====
-document.querySelectorAll('.filter-option').forEach(opt => {
-  opt.addEventListener('click', () => {
-    const siblings = opt.parentElement.querySelectorAll('.filter-option');
-    siblings.forEach(s => s.classList.remove('active'));
-    opt.classList.add('active');
-  });
-});
+// ============ Canvas绘制：模拟视频流 ============
+const vcanvas = document.getElementById('bridgeCanvas');
+const vctx = vcanvas.getContext('2d');
+let animId;
 
-document.querySelectorAll('.status-chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    chip.classList.toggle('active');
-  });
-});
+function resizeCanvas() {
+  const rect = document.getElementById('videoArea').getBoundingClientRect();
+  vcanvas.width = rect.width;
+  vcanvas.height = rect.height;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-// ===== 视图标签切换 =====
-document.querySelectorAll('.view-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    tab.parentElement.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-  });
-});
+// 桥梁场景参数
+let sceneOffset = 0;
+function drawBridgeScene() {
+  const W=vcanvas.width,H=vcanvas.height;
+  
+  // 天空渐变
+  const skyGrad = vctx.createLinearGradient(0,0,0,H*0.55);
+  skyGrad.addColorStop(0,'#0a1628'); skyGrad.addColorStop(0.5,'#152238'); skyGrad.addColorStop(1,'#1a3045');
+  vctx.fillStyle=skyGrad; vctx.fillRect(0,0,W,H);
 
-// ===== 日历日期hover效果 =====
-document.querySelectorAll('.cal-day:not(.other-month)').forEach(day => {
-  day.addEventListener('click', () => {
-    // 切换到排期页并高亮该日
-    showPage('pageSchedule');
-  });
-});
+  if(thermalMode){
+    // 热成像模式
+    const tGrad = vctx.createRadialGradient(W/2,H*0.45,50,W/2,H*0.45,W*0.6);
+    tGrad.addColorStop(0,'rgba(239,68,68,.3)'); tGrad.addColorStop(.5,'rgba(245,158,11,.2)');
+    tGrad.addColorStop(1,'transparent');
+    vctx.fillStyle=tGrad; vctx.fillRect(0,0,W,H);
 
-// ===== 航点点击交互 =====
-document.querySelectorAll('.waypoint-marker').forEach(wp => {
-  wp.addEventListener('click', () => {
-    document.querySelectorAll('.waypoint-marker').forEach(w => w.style.boxShadow='');
-    wp.style.boxShadow = '0 0 0 3px rgba(67,97,238,.4)';
-  });
-});
+    // 热斑（模拟缺陷高温区）
+    const hotSpots = [{x:W*.42,y:H*.58,r:35},{x:W*.62,y:H*.54,r:25},{x:W*.72,y:H*.62,r:20}];
+    hotSpots.forEach(s=>{
+      const hg = vctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r);
+      hg.addColorStop(0,'rgba(239,68,68,.7)');hg.addColorStop(.5,'rgba(245,158,11,.4)');hg.addColorStop(1,'transparent');
+      vctx.fillStyle=hg; vctx.beginPath();vctx.arc(s.x,s.y,s.r,0,Math.PI*2);vctx.fill();
+    });
+  } else{
+    // 水面反射
+    vctx.fillStyle='rgba(6,182,212,.05)';
+    vctx.fillRect(0,H*.6,W,H*.4);
+    for(let i=0;i<30;i++){
+      const x=(i*73+sceneOffset*0.3)%W;
+      vctx.fillStyle=`rgba(6,182,212,${.03+Math.sin(Date.now()/1000+i)*.02})`;
+      vctx.fillRect(x,H*.6+i%2*H*.04,60+Math.random()*40,1);
+    }
 
-// ===== 缺陷卡片展开动画 =====
-document.querySelectorAll('.defect-card').forEach(card => {
-  card.addEventListener('mouseenter', () => {
-    card.style.transform = 'translateX(-2px)';
-  });
-  card.addEventListener('mouseleave', () => {
-    card.style.transform = '';
-  });
-});
+    // 远景山峦
+    vctx.fillStyle='#1a2744';
+    vctx.beginPath();vctx.moveTo(0,H*.48);
+    for(let i=0;i<=W;i+=30)vctx.lineTo(i,H*.43-Math.sin(i*.008)*25-Math.cos(i*.015)*15);
+    vctx.lineTo(W,H*.48);vctx.closePath();vctx.fill();
 
-console.log('🌉 天枢桥检演示平台已加载 | Bridge Inspection Demo Ready');
+    // 桥梁主体
+    const bridgeY = H*.5;
+    // 桥墩
+    [W*.15,W*.4,W*.7,W*.88].forEach((x,i)=>{
+      vctx.fillStyle=i===1||i===2?'#2a3a55':'#232f47';
+      vctx.fillRect(x-15,bridgeY+22,30,H*.38);
+      // 墩帽
+      vctx.fillStyle='#334466';vctx.fillRect(x-22,bridgeY+18,44,8);
+    });
+    
+    // 桥面
+    const bGrad=vctx.createLinearGradient(0,bridgeY,0,bridgeY+22);
+    bGrad.addColorStop(0,'#4a5a75');bGrad.addColorStop(1,'#3a4a65');
+    vctx.fillStyle=bGrad;vctx.fillRect(0,bridgeY,W,22);
+    // 护栏
+    vctx.fillStyle='#3a4a65';vctx.fillRect(0,bridgeY-8,W,8);
+    // 护栏柱子
+    for(let i=0;i<W;i+=40){
+      vctx.fillRect(i,bridgeY-16,4,16);
+      vctx.strokeStyle='#4a5a75';vctx.lineWidth=1;
+      vctx.beginPath();vctx.moveTo(i+2,bridgeY-14);vctx.lineTo(i+36,bridgeY-14);vctx.stroke();
+    }
+    // 车道线
+    vctx.setLineDash([20,15]);vctx.strokeStyle='rgba(255,255,255,.25)';vctx.lineWidth=2;
+    vctx.beginPath();vctx.moveTo(W*.25,bridgeY+11);vctx.lineTo(W*.75,bridgeY+11);vctx.stroke();
+    vctx.setLineDash([]);
+
+    // 水面波纹
+    for(let i=0;i<15;i++){
+      const y=bridgeY+70+(i*8)+(sceneOffset*.05)%40;
+      const alpha=.04+(i%3)*.02;
+      vctx.fillStyle=`rgba(6,182,212,${alpha})`;
+      vctx.beginPath();vctx.arc((i*97+sceneOffset*.2)%W,y,20+Math.sin(Date.now()/1500+i)*10,0,Math.PI*2);vctx.fill();
+    }
+
+    // 网格叠加（科技感）
+    vctx.strokeStyle='rgba(59,130,246,.05)';vctx.lineWidth=.5;
+    for(let i=0;i<W;i+=50){vctx.beginPath();vctx.moveTo(i,0);vctx.lineTo(i,H);vctx.stroke();}
+    for(let i=0;i<H;i+=50){vctx.beginPath();vctx.moveTo(0,i);vctx.lineTo(W,i);vctx.stroke();}
+  }
+
+  // 扫描线效果
+  if(isPlaying){
+    const scanY=(Date.now()%3000)/3000*H;
+    const scanG=vctx.createLinearGradient(0,scanY-20,0,scanY+20);
+    scanG.addColorStop(0,'transparent');scanG.addColorStop(.5,'rgba(59,130,246,.08)');scanG.addColorStop(1,'transparent');
+    vctx.fillStyle=scanG;vctx.fillRect(0,scanY-20,W,40);
+  }
+
+  // 时间戳水印
+  vctx.font='11px monospace';vctx.fillStyle='rgba(255,255,255,.2)';
+  vctx.fillText(`TIANSHU-BRIDGE | ${new Date().toISOString().slice(0,19).replace('T',' ')} | YOLOv8m | ALT:96.3m`,12,H-12);
+}
+
+// ============ 绘制检测框 ============
+function drawDetectionBoxes() {
+  const overlay=document.getElementById('detOverlay');
+  const W=vcanvas.width,H=vcanvas.height;
+  
+  // 定义每个缺陷在画布上的位置
+  const positions=[
+    {x:.38,y:.56,w:.12,h:.09},
+    {x:.56,y:.53,w:.09,h:.07},
+    {x:.66,y:.57,w:.10,h:.08},
+    {x:.22,y:.51,w:.07,h:.05},
+    {x/.78,y:.49,w:.06,h:.04},
+    {x/.15,y:.63,w:.09,h:.06},
+  ];
+  
+  overlay.innerHTML=DEFECTS.map((d,i)=>{
+    const p=positions[i];
+    const left=p.x*100+'%',top=p.y*100+'%',w=p.w*100+'%',h=p.h*100+'%';
+    return `<div class="det-box" style="left:${left};top:${top};width:${w};height:${h};border-color:${d.color};box-shadow:0 0 8px ${d.color}44;">
+      <div class="det-label" style="background:${d.color}">
+        ${d.icon} ${d.name} <span class="det-conf">${d.conf}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============ 详情Canvas绘制 ============
+function drawDetailCanvas(){
+  const c=document.getElementById('detailCanvas'),cx=c.getContext('2d');
+  const d=selectedDefect;
+  cx.clearRect(0,0,c.width,c.height);
+  // 背景
+  const bg=cx.createLinearGradient(0,0,0,c.height);
+  bg.addColorStop(0,'#0d1525');bg.addColorStop(1,'#162033');
+  cx.fillStyle=bg;cx.fillRect(0,0,c.width,c.height);
+  // 模拟缺陷特写区域
+  cx.strokeStyle=d.color;cx.lineWidth=2;
+  cx.strokeRect(20,20,c.width-40,c.height-40);
+  cx.fillStyle=d.color+'18';cx.fillRect(20,20,c.width-40,c.height-40);
+  // 网格
+  cx.strokeStyle=d.color+'30';cx.lineWidth=.5;
+  for(let i=0;i<c.width;i+=20){cx.beginPath();cx.moveTo(i,20);cx.lineTo(i,c.height-20);cx.stroke();}
+  for(let i=20;i<c.height;i+=20){cx.beginPath();cx.moveTo(20,i);cx.lineTo(c.width-20,i);cx.stroke();}
+  // 缺陷标记十字
+  const mx=c.width/2,my=c.height/2;
+  cx.strokeStyle=d.color;cx.lineWidth=2;
+  cx.beginPath();cx.moveTo(mx-20,my);cx.lineTo(mx+20,my);cx.moveTo(mx,my-20);cx.lineTo(mx,my+20);cx.stroke();
+  cx.beginPath();cx.arc(mx,my,8,0,Math.PI*2);cx.stroke();
+  // 文字
+  cx.font='bold 12px sans-serif';cx.fillStyle=d.color;
+  cx.fillText(`${d.name} · ${d.conf}%`,10,c.height-8);
+}
+
+// ============ 动画循环 ============
+function animate() {
+  sceneOffset++;
+  drawBridgeScene();
+  if(isPlaying)frameTime++;
+  // 更新时间显示
+  const sec=Math.floor(frameTime/30);
+  const h=String(Math.floor(sec/3600)).padStart(2,'0');
+  const m=String(Math.floor(sec%3600/60)).padStart(2,'0');
+  const s=String(sec%60).padStart(2,'0');
+  document.getElementById('curTime').textContent=`${h}:${m}:${s}`;
+  const progress=Math.min(frameTime/(8*60+32)*30,100);
+  document.getElementById('timelineProgress').style.width=progress+'%';
+
+  animId=requestAnimationFrame(animate);
+}
+animate();
+drawDetectionBoxes();
+renderDetail();
+
+// ============ 控制 ============
+function togglePlay(){isPlaying=!isPlaying;document.getElementById('playBtn').textContent=isPlaying?'⏸':'▶';}
+function toggleThermal(el){thermalMode=true;el.classList.add('active');document.getElementById('btnVisible').classList.remove('active');}
+function toggleVisible(el){thermalMode=false;el.classList.add('active');document.getElementById('btnThermal').classList.remove('active');}
+
+// ============ 时钟 ============
+setInterval(()=>{document.getElementById('clockDisplay').textContent=new Date().toLocaleTimeString();},1000);
+
+// ============ 图片上传检测 ============
+function handleUpload(e){
+  const file=e.target.files[0];if(!file)return;
+  const img=new Image();img.onload=()=>{
+    // 显示在主画面上
+    vctx.drawImage(img,0,0,vcanvas.width,vcanvas.height);
+    // 添加模拟检测结果
+    simulateDetection(file.name);
+  };
+  img.src=URL.createObjectURL(file);
+}
+function simulateDetection(name){
+  // 模拟检测动画
+  const overlay=document.getElementById('detOverlay');
+  overlay.innerHTML='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:99;"><div style="text-align:center;color:white;"><div style="font-size:40px;margin-bottom:10px;">🧠</div><div style="font-size:16px;font-weight:700;">YOLOv8m 推理中...</div><div style="font-size:12px;color:var(--text-muted);margin-top:6px;">正在分析: '+name+'</div></div></div>';
+  setTimeout(()=>{
+    overlay.innerHTML='';
+    drawDetectionBoxes();
+    triggerAlert();
+  },1500);
+}
+
+// ============ 截图 ============
+function captureFrame(){
+  const dataUrl=vcanvas.toDataURL('image/png');
+  const win=window.open();
+  win.document.write(`<title>天枢桥检截图</title><img src="${dataUrl}" style="max-width:100%;cursor:crosshair" onclick="window.location.href='${dataUrl}'"><div style="position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;">💡 点击图片或 右键→图片另存为</div>`);
+}
+
+// ============ 全屏 ============
+function toggleFullscreen(){
+  const el=document.getElementById('videoArea');
+  if(document.fullscreenElement)document.exitFullscreen();
+  else el.requestFullscreen?.();
+}
+
+// ============ 告警弹窗 ============
+function triggerAlert(){
+  alertCount++;
+  const d=DEFECTS[Math.min(alertCount-1,DEFECTS.length-1)];
+  document.getElementById('alertBody').innerHTML=`
+    <p><b style="color:var(--red)">${d.icon} ${d.name}</b></p>
+    <p>位置：${d.location}</p>
+    <p>置信度：<b style="color:${d.color}">${d.conf}%</b></p>
+    <p>严重等级：<b style="color:var(--red)">${d.sevText}</b></p>
+    <p style="margin-top:6px;color:var(--orange);">⚠️ 已自动通知运维团队</p>
+  `;
+  const pop=document.getElementById('alertPopup');
+  pop.style.display='block';
+  setTimeout(()=>pop.classList.add('show'),10);
+  // 播放提示音（如果浏览器允许）
+  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();
+  const osc=ctx.createOscillator();osc.frequency.value=880;
+  const g=ctx.createGain();g.gain.value=.1;osc.connect(g);g.connect(ctx.destination);
+  osc.start();setTimeout(()=>osc.stop(),200);}catch(e){}
+  
+  // 更新计数
+  document.getElementById('totalCount').textContent=`${6+alertCount} 处缺陷`;
+}
+function closeAlert(){
+  const pop=document.getElementById('alertPopup');
+  pop.classList.remove('show');
+  setTimeout(()=>pop.style.display='none',400);
+}
+
+// ============ 导出报告 ============
+function exportReport(){
+  alert('📋 PDF报告生成中...\n\n实际部署时将调用后端API生成包含：\n• 高清缺陷标注图\n• 详细测量数据\n• 维修建议与优先级\n• 合规签名区域');
+}
+
+// ============ 初始化 ============
+console.log('🌉 天枢桥检实时监控系统 v2.1 | YOLOv8m + Jetson Orin NX + WebSocket');
+console.log('📍 当前目标：平顶山西干渠桥 | 巡检模式：AI定损全扫');
+
+// 定时模拟新缺陷（演示用）
+setInterval(()=>{
+  if(Math.random()<.15 && isPlaying) triggerAlert();
+},8000);
 </script>
 </body>
 </html>
